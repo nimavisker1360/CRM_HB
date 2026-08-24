@@ -1,0 +1,24 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-matching",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/property-matching",
+      "schedule": "30 0 * * *"
+    },
+    {
+      "path": "/api/cron/import-matching",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/followups",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/inactive-customers",
+      "schedule": "30 1 * * *"
+    }
+  ]
+}
