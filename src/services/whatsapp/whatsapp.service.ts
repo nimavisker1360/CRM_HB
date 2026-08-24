@@ -46,6 +46,7 @@ async function ensureRateLimit(agentId: string | undefined, userId: string) {
     ...actorQuery,
     createdAt: { $gte: dayStart() },
     direction: "OUTBOUND",
+    status: { $in: ["QUEUED", "SENDING", "SENT", "DELIVERED", "READ"] },
   });
   if (count >= whatsappConfig.maxMessagesPerAgentPerDay) {
     throw new WhatsAppServiceError(
