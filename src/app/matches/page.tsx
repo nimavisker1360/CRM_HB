@@ -32,7 +32,8 @@ import { getServerLocale } from "@/lib/i18n-server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { serializeMongo } from "@/lib/serialize";
 import { Agent, Customer, Property, PropertyMatch } from "@/models";
-import { ACTIVE_PROPERTY_STATUS, MATCH_MIN_SCORE, MATCH_STATUSES } from "@/services/matching/matching.config";
+import { MATCH_MIN_SCORE, MATCH_STATUSES } from "@/services/matching/matching.config";
+import { buildPropertyCandidateQuery } from "@/services/matching/matching.service";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +74,7 @@ export default async function MatchesPage({ searchParams }: { searchParams: Page
   const minimumScore = clampScore(firstParam(params.minScore));
   const customerScope = agentScopeFilter(scope);
 
-  const [agentsResult, customersResult, selectedCustomerResult, activePropertiesResult] = await Promise.all([
+  const [agentsResult, customersResult, selectedCustomerResult] = await Promise.all([
     session.role === "AGENT"
       ? Promise.resolve([])
       : Agent.find({}).sort({ fullName: 1, name: 1 }).select("fullName name").lean(),
@@ -90,13 +91,6 @@ export default async function MatchesPage({ searchParams }: { searchParams: Page
           .populate("assignedAgentId", "fullName name")
           .lean<DetailRecord | null>()
       : Promise.resolve(null),
-    selectedCustomerId
-      ? Property.find({ status: ACTIVE_PROPERTY_STATUS })
-          .sort({ updatedAt: -1, title: 1 })
-          .limit(250)
-          .select("title propertyCode city district price currency rooms grossArea images videoUrl")
-          .lean<DetailRecord[]>()
-      : Promise.resolve([]),
   ]);
 
   if (requestedCustomerId && (!selectedCustomerId || !selectedCustomerResult)) {
@@ -110,6 +104,14 @@ export default async function MatchesPage({ searchParams }: { searchParams: Page
   const agents = serializeMongo(agentsResult);
   const customers = serializeMongo(customersResult);
   const selectedCustomer = serializeMongo(selectedCustomerResult);
+  const activePropertiesResult = selectedCustomerResult
+    ? await Property.find(buildPropertyCandidateQuery(selectedCustomerResult))
+        .collation({ locale: "tr", strength: 1 })
+        .sort({ updatedAt: -1, title: 1 })
+        .limit(250)
+        .select("title propertyCode city district price currency rooms grossArea images videoUrl")
+        .lean<DetailRecord[]>()
+    : [];
   const activeProperties = serializeMongo(activePropertiesResult);
   const matchQuery: Record<string, unknown> | undefined = selectedCustomerId
     ? {

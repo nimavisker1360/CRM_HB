@@ -41,7 +41,7 @@ function isEligibleCustomer(customer?: Record<string, unknown> | null): customer
   return Boolean(customer && ACTIVE_CUSTOMER_STATUSES.includes(String(customer.status) as never));
 }
 
-function propertyCandidateQuery(customer: Record<string, unknown>) {
+export function buildPropertyCandidateQuery(customer: Record<string, unknown>) {
   const query: Record<string, unknown> = { status: ACTIVE_PROPERTY_STATUS };
   if (customer.transactionType) query.transactionType = customer.transactionType;
   if (customer.interestedCity) query.city = customer.interestedCity;
@@ -145,7 +145,7 @@ export async function recalculateCustomerMatches(customerId: string | Types.Obje
     return { saved: 0, scanned: 0 };
   }
 
-  const candidateQuery = propertyCandidateQuery(customer);
+  const candidateQuery = buildPropertyCandidateQuery(customer);
   const candidateProperties = await Property.find(candidateQuery)
     .collation(LOCATION_COLLATION)
     .select("_id")
