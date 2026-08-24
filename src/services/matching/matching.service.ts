@@ -41,14 +41,70 @@ function isEligibleCustomer(customer?: Record<string, unknown> | null): customer
   return Boolean(customer && ACTIVE_CUSTOMER_STATUSES.includes(String(customer.status) as never));
 }
 
+function optionalNumber(value: unknown) {
+  if (value === undefined || value === null || value === "") return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function sameCandidateText(left: unknown, right: unknown) {
+  const leftText = String(left || "").trim();
+  const rightText = String(right || "").trim();
+  return Boolean(leftText && rightText && leftText.localeCompare(rightText, "tr", { sensitivity: "base" }) === 0);
+}
+
+export function isPropertyCandidateForCustomer(
+  customer: Record<string, unknown>,
+  property: Record<string, unknown>,
+) {
+  if (property.status !== ACTIVE_PROPERTY_STATUS) return false;
+
+  for (const [customerField, propertyField] of [
+    ["transactionType", "transactionType"],
+    ["propertyType", "propertyType"],
+    ["currency", "currency"],
+    ["interestedCity", "city"],
+    ["interestedDistrict", "district"],
+  ] as const) {
+    if (customer[customerField] && !sameCandidateText(customer[customerField], property[propertyField])) return false;
+  }
+
+  const maxBudget = optionalNumber(customer.maxBudget) ?? optionalNumber(customer.budgetMax);
+  const price = optionalNumber(property.price);
+  if (maxBudget !== undefined && maxBudget > 0 && (price === undefined || price > Math.round(maxBudget * 1.15))) {
+    return false;
+  }
+
+  const minArea = optionalNumber(customer.minArea);
+  const maxArea = optionalNumber(customer.maxArea);
+  const propertyArea = optionalNumber(property.grossArea);
+  if ((minArea !== undefined || maxArea !== undefined) && propertyArea === undefined) return false;
+  if (minArea !== undefined && propertyArea !== undefined && propertyArea < minArea) return false;
+  if (maxArea !== undefined && propertyArea !== undefined && propertyArea > maxArea) return false;
+
+  return true;
+}
+
 export function buildPropertyCandidateQuery(customer: Record<string, unknown>) {
   const query: Record<string, unknown> = { status: ACTIVE_PROPERTY_STATUS };
   if (customer.transactionType) query.transactionType = customer.transactionType;
+  if (customer.propertyType) query.propertyType = customer.propertyType;
+  if (customer.currency) query.currency = customer.currency;
   if (customer.interestedCity) query.city = customer.interestedCity;
+  if (customer.interestedDistrict) query.district = customer.interestedDistrict;
 
   const maxBudget = Number(customer.maxBudget || customer.budgetMax || 0);
   if (maxBudget > 0) {
     query.price = { $lte: Math.round(maxBudget * 1.15) };
+  }
+
+  const minArea = optionalNumber(customer.minArea);
+  const maxArea = optionalNumber(customer.maxArea);
+  if (minArea !== undefined || maxArea !== undefined) {
+    query.grossArea = {
+      ...(minArea !== undefined ? { $gte: minArea } : {}),
+      ...(maxArea !== undefined ? { $lte: maxArea } : {}),
+    };
   }
 
   return query;
@@ -89,6 +145,11 @@ async function saveMatch(
   const customerId = customer._id;
   const propertyId = property._id;
   const agentId = agentIdForCustomer(customer);
+
+  if (!isPropertyCandidateForCustomer(customer, property)) {
+    await PropertyMatch.deleteOne({ customerId, propertyId });
+    return null;
+  }
 
   if (result.score < MATCH_MIN_SCORE) {
     await PropertyMatch.deleteOne({ customerId, propertyId });
