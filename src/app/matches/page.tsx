@@ -104,19 +104,27 @@ export default async function MatchesPage({ searchParams }: { searchParams: Page
   const agents = serializeMongo(agentsResult);
   const customers = serializeMongo(customersResult);
   const selectedCustomer = serializeMongo(selectedCustomerResult);
-  const activePropertiesResult = selectedCustomerResult
-    ? await Property.find(buildPropertyCandidateQuery(selectedCustomerResult))
-        .collation({ locale: "tr", strength: 1 })
-        .sort({ updatedAt: -1, title: 1 })
-        .limit(250)
-        .select("title propertyCode city district price currency rooms grossArea images videoUrl")
-        .lean<DetailRecord[]>()
-    : [];
+  const candidateQuery = selectedCustomerResult ? buildPropertyCandidateQuery(selectedCustomerResult) : undefined;
+  const [activePropertiesResult, candidatePropertyIdsResult] = candidateQuery
+    ? await Promise.all([
+        Property.find(candidateQuery)
+          .collation({ locale: "tr", strength: 1 })
+          .sort({ updatedAt: -1, title: 1 })
+          .limit(250)
+          .select("title propertyCode city district price currency rooms grossArea images videoUrl")
+          .lean<DetailRecord[]>(),
+        Property.find(candidateQuery)
+          .collation({ locale: "tr", strength: 1 })
+          .select("_id")
+          .lean<DetailRecord[]>(),
+      ])
+    : [[], []];
   const activeProperties = serializeMongo(activePropertiesResult);
   const matchQuery: Record<string, unknown> | undefined = selectedCustomerId
     ? {
         ...agentScopeFilter(scope, "agentId"),
         customerId: selectedCustomerId,
+        propertyId: { $in: candidatePropertyIdsResult.map((property) => property._id) },
         score: { $gte: minimumScore },
         status: status || { $ne: "ARCHIVED" },
       }
