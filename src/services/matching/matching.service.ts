@@ -67,6 +67,20 @@ function customerCandidateQuery(property: Record<string, unknown>) {
   return query;
 }
 
+async function deleteCustomerMatchesOutsideCandidates(customerId: Types.ObjectId, propertyIds: Types.ObjectId[]) {
+  await PropertyMatch.deleteMany({
+    customerId,
+    ...(propertyIds.length ? { propertyId: { $nin: propertyIds } } : {}),
+  });
+}
+
+async function deletePropertyMatchesOutsideCandidates(propertyId: Types.ObjectId, customerIds: Types.ObjectId[]) {
+  await PropertyMatch.deleteMany({
+    propertyId,
+    ...(customerIds.length ? { customerId: { $nin: customerIds } } : {}),
+  });
+}
+
 async function saveMatch(
   customer: LeanRecord,
   property: LeanRecord,
@@ -131,7 +145,14 @@ export async function recalculateCustomerMatches(customerId: string | Types.Obje
     return { saved: 0, scanned: 0 };
   }
 
-  const properties = await Property.find(propertyCandidateQuery(customer))
+  const candidateQuery = propertyCandidateQuery(customer);
+  const candidateProperties = await Property.find(candidateQuery)
+    .collation(LOCATION_COLLATION)
+    .select("_id")
+    .lean<LeanRecord[]>();
+  await deleteCustomerMatchesOutsideCandidates(_id, candidateProperties.map((property) => property._id));
+
+  const properties = await Property.find(candidateQuery)
     .collation(LOCATION_COLLATION)
     .limit(limit)
     .lean<LeanRecord[]>();
@@ -168,7 +189,14 @@ export async function recalculatePropertyMatches(propertyId: string | Types.Obje
     return { saved: 0, scanned: 0 };
   }
 
-  const customers = await Customer.find(customerCandidateQuery(property))
+  const candidateQuery = customerCandidateQuery(property);
+  const candidateCustomers = await Customer.find(candidateQuery)
+    .collation(LOCATION_COLLATION)
+    .select("_id")
+    .lean<LeanRecord[]>();
+  await deletePropertyMatchesOutsideCandidates(_id, candidateCustomers.map((customer) => customer._id));
+
+  const customers = await Customer.find(candidateQuery)
     .collation(LOCATION_COLLATION)
     .limit(limit)
     .lean<LeanRecord[]>();

@@ -145,6 +145,18 @@ function toInputValue(value: unknown) {
   return String(value);
 }
 
+function stripNumberGrouping(value: string) {
+  return value.replace(/[^\d-]/g, "").replace(/(?!^)-/g, "");
+}
+
+function formatGroupedNumberInput(value: string) {
+  const normalized = stripNumberGrouping(value);
+  const sign = normalized.startsWith("-") ? "-" : "";
+  const digits = sign ? normalized.slice(1) : normalized;
+  if (!digits) return sign;
+  return `${sign}${digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+}
+
 const AVATAR_SOURCE_MAX_BYTES = 10 * 1024 * 1024;
 const AVATAR_MAX_DIMENSION = 512;
 const PROPERTY_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
@@ -1143,12 +1155,22 @@ function FilterControl({
     );
   }
 
+  if (field.type === "number") {
+    return (
+      <GroupedNumberInput
+        className="h-10 rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-950"
+        onChange={onChange}
+        value={value}
+      />
+    );
+  }
+
   return (
     <input
       className="h-10 rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-950"
       onChange={(event) => onChange(event.target.value)}
       placeholder={translateLiteral(field.label, locale)}
-      type={field.type === "number" ? "number" : "text"}
+      type="text"
       value={value}
     />
   );
@@ -1270,6 +1292,13 @@ function FormControl({
             </option>
           ))}
         </select>
+      ) : field.type === "number" ? (
+        <GroupedNumberInput
+          className={`${className} w-full text-left`}
+          defaultValue={String(value)}
+          name={field.name}
+          required={field.required}
+        />
       ) : (
         <input
           autoComplete={isPhoneField(field.name) ? "tel" : undefined}
@@ -1286,6 +1315,46 @@ function FormControl({
         />
       )}
     </label>
+  );
+}
+
+function GroupedNumberInput({
+  className,
+  defaultValue,
+  name,
+  onChange,
+  required,
+  value,
+}: {
+  className: string;
+  defaultValue?: string;
+  name?: string;
+  onChange?: (value: string) => void;
+  required?: boolean;
+  value?: string;
+}) {
+  const [draftValue, setDraftValue] = useState(() => formatGroupedNumberInput(defaultValue ?? ""));
+  const displayValue = value !== undefined ? formatGroupedNumberInput(value) : draftValue;
+  const rawValue = stripNumberGrouping(displayValue);
+
+  function updateValue(nextValue: string) {
+    const formatted = formatGroupedNumberInput(nextValue);
+    if (value === undefined) setDraftValue(formatted);
+    onChange?.(stripNumberGrouping(formatted));
+  }
+
+  return (
+    <>
+      <input
+        className={className}
+        inputMode="numeric"
+        onChange={(event) => updateValue(event.target.value)}
+        required={required}
+        type="text"
+        value={displayValue}
+      />
+      {name ? <input name={name} type="hidden" value={rawValue} /> : null}
+    </>
   );
 }
 
