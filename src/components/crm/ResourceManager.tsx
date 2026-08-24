@@ -100,7 +100,11 @@ function isPhoneField(name: string) {
 }
 
 async function fetchLocationOptions(params: URLSearchParams, signal: AbortSignal) {
-  const response = await fetch(`/api/locations?${params.toString()}`, { cache: "no-store", signal });
+  const response = await fetch(`/api/locations?${params.toString()}`, {
+    cache: "no-store",
+    credentials: "same-origin",
+    signal,
+  });
   const payload = (await response.json()) as LocationApiResponse;
   if (!response.ok || !payload.success || !payload.data) {
     throw new Error("LOCATION_OPTIONS_UNAVAILABLE");

@@ -8,6 +8,7 @@ const publicPaths = [
   "/api/auth/logout",
   "/api/auth/google",
   "/api/health",
+  "/api/locations",
   "/api/cron",
   "/api/webhooks/whatsapp",
 ];

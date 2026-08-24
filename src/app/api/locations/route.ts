@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { handleApiError, jsonOk } from "@/lib/api";
-import { requireSession } from "@/lib/auth/session";
 import { getTurkeyDistricts, getTurkeyNeighborhoods, getTurkeyProvinces } from "@/lib/turkey-locations";
 
 export const runtime = "nodejs";
@@ -13,7 +12,6 @@ const querySchema = z.discriminatedUnion("level", [
 
 export async function GET(request: Request) {
   try {
-    await requireSession();
     const url = new URL(request.url);
     const parsed = querySchema.parse({
       level: url.searchParams.get("level"),
