@@ -100,9 +100,12 @@ function isPhoneField(name: string) {
 }
 
 async function fetchLocationOptions(params: URLSearchParams, signal: AbortSignal) {
-  const response = await fetch(`/api/locations?${params.toString()}`, { cache: "force-cache", signal });
+  const response = await fetch(`/api/locations?${params.toString()}`, { cache: "no-store", signal });
   const payload = (await response.json()) as LocationApiResponse;
-  return payload.success && payload.data ? payload.data : [];
+  if (!response.ok || !payload.success || !payload.data) {
+    throw new Error("LOCATION_OPTIONS_UNAVAILABLE");
+  }
+  return payload.data;
 }
 
 function getNestedValue(record: CrmRecord, key: string) {
@@ -236,6 +239,9 @@ export function ResourceManager({
   const [error, setError] = useState("");
   const [lookups, setLookups] = useState<LookupState>({});
   const [provinceOptions, setProvinceOptions] = useState<FieldOption[]>([]);
+  const [provinceOptionsError, setProvinceOptionsError] = useState(false);
+  const [provinceOptionsLoading, setProvinceOptionsLoading] = useState(true);
+  const [provinceOptionsReload, setProvinceOptionsReload] = useState(0);
   const [formDistrictOptions, setFormDistrictOptions] = useState<FieldOption[]>([]);
   const [formNeighborhoodOptions, setFormNeighborhoodOptions] = useState<FieldOption[]>([]);
   const [filterDistrictOptions, setFilterDistrictOptions] = useState<FieldOption[]>([]);
@@ -262,11 +268,28 @@ export function ResourceManager({
   useEffect(() => {
     if (!formLocationFields.length && !filterLocationFields.length) return;
     const controller = new AbortController();
-    void fetchLocationOptions(new URLSearchParams({ level: "provinces" }), controller.signal).then(setProvinceOptions).catch((requestError) => {
-      if ((requestError as Error).name !== "AbortError") setProvinceOptions([]);
-    });
+    void fetchLocationOptions(new URLSearchParams({ level: "provinces" }), controller.signal)
+      .then((options) => {
+        setProvinceOptions(options);
+        setProvinceOptionsError(options.length === 0);
+      })
+      .catch((requestError) => {
+        if ((requestError as Error).name !== "AbortError") {
+          setProvinceOptions([]);
+          setProvinceOptionsError(true);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setProvinceOptionsLoading(false);
+      });
     return () => controller.abort();
-  }, [formLocationFields.length, filterLocationFields.length]);
+  }, [formLocationFields.length, filterLocationFields.length, provinceOptionsReload]);
+
+  function reloadProvinceOptions() {
+    setProvinceOptionsLoading(true);
+    setProvinceOptionsError(false);
+    setProvinceOptionsReload((current) => current + 1);
+  }
 
   useEffect(() => {
     if (!isFormOpen || !formCityValue || !formDistrictField) return;
@@ -301,6 +324,9 @@ export function ResourceManager({
 
   function openForm(item?: CrmRecord) {
     const record = item || createDefaults || {};
+    if (!provinceOptions.length && !provinceOptionsLoading) {
+      reloadProvinceOptions();
+    }
     setEditing(item || null);
     setFormDistrictOptions([]);
     setFormNeighborhoodOptions([]);
@@ -960,7 +986,13 @@ export function ResourceManager({
                                   (locationLevel(field.name) === "district" && !formCityValue) ||
                                   (locationLevel(field.name) === "neighborhood" && (!formCityValue || !formDistrictValue)),
                                 onChange: (value) => updateFormLocation(field, value),
+                                onRetry:
+                                  locationLevel(field.name) === "province"
+                                    ? reloadProvinceOptions
+                                    : undefined,
                                 options: formOptionsFor(field) || [],
+                                optionsError: locationLevel(field.name) === "province" && provinceOptionsError,
+                                optionsLoading: locationLevel(field.name) === "province" && provinceOptionsLoading,
                               }
                             : undefined
                         }
@@ -1130,7 +1162,10 @@ function FormControl({
   location?: {
     disabled: boolean;
     onChange: (value: string) => void;
+    onRetry?: () => void;
     options: FieldOption[];
+    optionsError?: boolean;
+    optionsLoading?: boolean;
   };
   lookups: LookupState;
   value: boolean | string;
@@ -1146,7 +1181,11 @@ function FormControl({
     const level = locationLevel(field.name);
     const currentValue = String(value);
     const locationOptions = includeCurrentOption(location.options, currentValue, locale);
-    const placeholder = locale === "tr"
+    const placeholder = location.optionsLoading
+      ? locale === "tr" ? "Şehirler yükleniyor..." : "در حال دریافت شهرها..."
+      : location.optionsError
+        ? locale === "tr" ? "Şehirler yüklenemedi" : "دریافت شهرها ناموفق بود"
+        : locale === "tr"
       ? level === "province"
         ? "Şehir seçin"
         : level === "district"
@@ -1169,7 +1208,7 @@ function FormControl({
         <select
           className={`${className} w-full disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400`}
           dir="ltr"
-          disabled={location.disabled}
+          disabled={location.disabled || location.optionsLoading || location.optionsError}
           name={field.name}
           onChange={(event) => location.onChange(event.target.value)}
           required={field.required}
@@ -1182,6 +1221,15 @@ function FormControl({
             </option>
           ))}
         </select>
+        {level === "province" && location.optionsError && location.onRetry ? (
+          <button
+            className="mt-2 text-xs font-bold text-blue-700 hover:underline"
+            onClick={location.onRetry}
+            type="button"
+          >
+            {locale === "tr" ? "Tekrar dene" : "تلاش مجدد برای دریافت شهرها"}
+          </button>
+        ) : null}
       </label>
     );
   }
