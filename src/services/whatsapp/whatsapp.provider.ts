@@ -33,6 +33,22 @@ export function metaPublicError(body: MetaErrorBody, status: number) {
       code,
     );
   }
+  if (code === "131047") {
+    return new WhatsAppServiceError(
+      "WHATSAPP_CONVERSATION_WINDOW_REQUIRED",
+      "پنجره ۲۴ ساعته گفتگو بسته است. ابتدا قالب شروع گفتگو را بفرستید و پس از پاسخ مشتری دوباره تلاش کنید.",
+      422,
+      code,
+    );
+  }
+  if (code === "131005") {
+    return new WhatsAppServiceError(
+      "WHATSAPP_ACCESS_DENIED",
+      "Meta اجازه ارسال با این Access Token را نداد. مجوز whatsapp_business_messaging و تنظیمات شماره فرستنده را بررسی کنید.",
+      422,
+      code,
+    );
+  }
   if (["132000", "132001", "132012", "132015", "132016"].includes(code) || message.includes("template")) {
     return new WhatsAppServiceError(
       "WHATSAPP_TEMPLATE_ERROR",

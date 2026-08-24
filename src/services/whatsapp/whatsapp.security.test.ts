@@ -60,6 +60,14 @@ describe("WhatsApp security and normalization", () => {
     expect(recipient.code).toBe("WHATSAPP_RECIPIENT_NOT_ALLOWED");
   });
 
+  it("maps Meta conversation-window and access-denied failures", async () => {
+    const { metaPublicError } = await import("@/services/whatsapp/whatsapp.provider");
+    const conversationWindow = metaPublicError({ error: { code: 131047 } }, 400);
+    const accessDenied = metaPublicError({ error: { code: 131005 } }, 400);
+    expect(conversationWindow.code).toBe("WHATSAPP_CONVERSATION_WINDOW_REQUIRED");
+    expect(accessDenied.code).toBe("WHATSAPP_ACCESS_DENIED");
+  });
+
   it("sends the real property preview before its image and video messages", async () => {
     vi.stubEnv("WHATSAPP_ACCESS_TOKEN", "test-access-token");
     vi.stubEnv("WHATSAPP_API_VERSION", "v23.0");

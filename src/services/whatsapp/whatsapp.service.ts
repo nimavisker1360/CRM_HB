@@ -253,7 +253,10 @@ export async function sendWhatsAppMessage(input: SendWhatsAppInput, session: Ses
       direction: "INBOUND",
       lastInboundAt: { $gte: conversationStart },
     });
-    if (!hasOpenConversation) {
+    // Meta is the source of truth for the 24-hour conversation window. Webhook
+    // delivery can be delayed or disabled in development mode, so local inbound
+    // history must not incorrectly block a conversation that Meta has opened.
+    if (!hasOpenConversation && process.env.WHATSAPP_REQUIRE_LOCAL_INBOUND === "true") {
       const error = new WhatsAppServiceError(
         related.media.length ? "WHATSAPP_MEDIA_WINDOW_REQUIRED" : "WHATSAPP_CONVERSATION_WINDOW_REQUIRED",
         related.media.length
