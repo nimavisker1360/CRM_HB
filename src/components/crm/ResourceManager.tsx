@@ -1176,6 +1176,7 @@ function FormControl({
 }) {
   const options = field.options || lookups[field.name] || [];
   const className = "h-10 rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-950";
+  const fieldLabel = <FieldLabel field={field} locale={locale} />;
 
   if (isMediaUploadField(field)) {
     return <MediaUploadControl field={field} locale={locale} value={value} />;
@@ -1208,7 +1209,7 @@ function FormControl({
 
     return (
       <label>
-        <span className="mb-1 block text-sm font-medium text-slate-700">{translateLiteral(field.label, locale)}</span>
+        {fieldLabel}
         <select
           className={`${className} w-full disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400`}
           dir="ltr"
@@ -1242,14 +1243,17 @@ function FormControl({
     return (
       <label className="flex h-10 items-center gap-2 text-sm text-slate-700">
         <input defaultChecked={Boolean(value)} name={field.name} type="checkbox" />
-        {translateLiteral(field.label, locale)}
+        <span>
+          {translateLiteral(field.label, locale)}
+          {field.required ? <RequiredMark /> : null}
+        </span>
       </label>
     );
   }
 
   return (
     <label className={field.type === "textarea" ? "md:col-span-2 xl:col-span-3" : undefined}>
-      <span className="mb-1 block text-sm font-medium text-slate-700">{translateLiteral(field.label, locale)}</span>
+      {fieldLabel}
       {field.type === "textarea" ? (
         <textarea
           className="min-h-24 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-950"
@@ -1285,6 +1289,23 @@ function FormControl({
   );
 }
 
+function FieldLabel({ field, locale }: { field: FieldConfig; locale: AppLocale }) {
+  return (
+    <span className="mb-1 block text-sm font-medium text-slate-700">
+      {translateLiteral(field.label, locale)}
+      {field.required ? <RequiredMark /> : null}
+    </span>
+  );
+}
+
+function RequiredMark() {
+  return (
+    <span aria-hidden="true" className="ms-1 align-super text-xs font-bold text-red-600">
+      *
+    </span>
+  );
+}
+
 function MediaUploadControl({ field, locale, value }: { field: FieldConfig; locale: AppLocale; value: boolean | string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [existingUrls, setExistingUrls] = useState(() => mediaUrls(value));
@@ -1299,7 +1320,7 @@ function MediaUploadControl({ field, locale, value }: { field: FieldConfig; loca
 
   return (
     <div className="md:col-span-2 xl:col-span-3">
-      <span className="mb-1 block text-sm font-medium text-slate-700">{translateLiteral(field.label, locale)}</span>
+      <FieldLabel field={field} locale={locale} />
       <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4">
         <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md bg-white px-4 py-5 text-center text-sm text-slate-600 transition hover:bg-slate-100">
           <ImageUp className="size-6 text-slate-500" />
