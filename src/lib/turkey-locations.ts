@@ -1,32 +1,34 @@
 import "server-only";
 
-import {
-  getAllProvinces,
-  getDistrictsByProvinceName,
-  getNeighborhoodsByDistrictApiId,
-} from "turkey-location-data";
+import rawTurkeyLocationData from "turkey-location-data/data/turkey_location_data.json";
 
 export type TurkeyLocationOption = { id?: number; label: string; value: string };
+type TurkeyNeighborhood = { name: string; apiId: number };
+type TurkeyDistrict = { name: string; apiId: number; neighborhoods: TurkeyNeighborhood[] };
+type TurkeyProvince = { name: string; apiId: number; districts: TurkeyDistrict[] };
+
+const turkeyLocationData = rawTurkeyLocationData as TurkeyProvince[];
 
 export function getTurkeyProvinces(): TurkeyLocationOption[] {
-  return getAllProvinces()
+  return turkeyLocationData
     .map((province) => ({ id: province.apiId, label: province.name, value: province.name }))
     .sort(turkishSort);
 }
 
 export function getTurkeyDistricts(provinceInput: string): TurkeyLocationOption[] {
-  const province = resolveByName(getAllProvinces(), provinceInput);
+  const province = resolveByName(turkeyLocationData, provinceInput);
   if (!province) return [];
-  return getDistrictsByProvinceName(province.name)
+  return province.districts
     .map((district) => ({ id: district.apiId, label: district.name, value: district.name }))
     .sort(turkishSort);
 }
 
 export function getTurkeyNeighborhoods(provinceInput: string, districtInput: string): TurkeyLocationOption[] {
-  const district = resolveByName(getTurkeyDistricts(provinceInput), districtInput);
-  if (!district?.id) return [];
-  return getNeighborhoodsByDistrictApiId(district.id)
-    .map((name, index) => ({ id: index + 1, label: name, value: name }))
+  const province = resolveByName(turkeyLocationData, provinceInput);
+  const district = province ? resolveByName(province.districts, districtInput) : undefined;
+  if (!district) return [];
+  return district.neighborhoods
+    .map((neighborhood) => ({ id: neighborhood.apiId, label: neighborhood.name, value: neighborhood.name }))
     .sort(turkishSort);
 }
 
