@@ -179,7 +179,6 @@ export function WhatsAppComposer({
         throw new Error(result.error?.message || t.sendError);
       }
       if (result.data?.message?.status === "FAILED") throw new Error(t.failedBefore);
-      if (typeOverride === "TEMPLATE") setMessageType("TEMPLATE");
       setSuccess(result.data?.deduplicated ? t.duplicate : typeOverride === "TEMPLATE" ? t.startTemplateSent : t.messageSent);
       setConfirming(false);
       onSent?.();
