@@ -2,7 +2,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/lib/auth/session";
 import { verifySessionToken } from "@/lib/auth/token";
 
-const publicPaths = ["/login", "/api/auth/login", "/api/auth/logout", "/api/auth/google", "/api/health", "/api/cron"];
+const publicPaths = [
+  "/login",
+  "/api/auth/login",
+  "/api/auth/logout",
+  "/api/auth/google",
+  "/api/health",
+  "/api/cron",
+  "/api/webhooks/whatsapp",
+];
 const adminPagePaths = ["/admin", "/agents", "/automation", "/import", "/import-center", "/settings"];
 
 function matchesPathPrefix(pathname: string, paths: string[]) {
