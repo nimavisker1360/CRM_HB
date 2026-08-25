@@ -62,7 +62,7 @@ export default async function PropertiesPage() {
         fields={[
           { label: "عنوان", name: "title", required: true, section: "اطلاعات اصلی" },
           { label: "کد ملک", name: "propertyCode", required: true, section: "اطلاعات اصلی" },
-          { label: "پروژه", name: "projectId", optionEndpoint: "/api/projects", optionLabel: "name", section: "اطلاعات اصلی", type: "select" },
+          { label: "پروژه", name: "projectId", optionEndpoint: "/api/projects", optionLabel: "name", required: true, section: "اطلاعات اصلی", type: "select" },
           { label: "نوع معامله", name: "transactionType", options: transactionOptions, required: true, section: "اطلاعات اصلی", type: "select" },
           { label: "نوع ملک", name: "propertyType", options: propertyTypeOptions, required: true, section: "اطلاعات اصلی", type: "select" },
           { label: "وضعیت", name: "status", options: propertyStatusOptions, section: "اطلاعات اصلی", type: "select" },
