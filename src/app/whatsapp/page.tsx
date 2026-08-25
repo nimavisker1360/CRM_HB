@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { WhatsAppMessageDeleteButton } from "@/components/whatsapp/WhatsAppMessageDeleteButton";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { agentScopeFilter, getAgentScope, firstParam } from "@/lib/auth/agent-scope";
@@ -22,13 +23,13 @@ export default async function WhatsAppPage({ searchParams }: { searchParams: Pro
   const t = locale === "tr" ? {
     agent: "Danışman", allAgents: "Tüm danışmanlar", allCustomers: "Tüm müşteriler", allDirections: "Tüm yönler", allStatuses: "Tüm durumlar",
     apply: "Filtreleri uygula", customer: "Müşteri", date: "Tarih", description: "Test ortamında Meta Cloud API mesajlarını ve teslim durumlarını izleyin.",
-    detail: "Ayrıntı", direction: "Yön", empty: "Bu filtrelerle eşleşen mesaj bulunamadı.", message: "mesaj", of: "/", page: "sayfa",
+    detail: "İşlemler", direction: "Yön", empty: "Bu filtrelerle eşleşen mesaj bulunamadı.", message: "mesaj", of: "/", page: "sayfa",
     status: "Durum", testNote: "Mesajlar şirketin üretim numarası yerine Meta WhatsApp test numarasından gönderilir.", title: "WhatsApp Mesajları",
     type: "Tür", unknown: "Bilinmeyen numara", view: "Görüntüle", sendProperty: "Müşteriye gayrimenkul gönder",
   } : {
     agent: "مشاور", allAgents: "همه مشاوران", allCustomers: "همه مشتریان", allDirections: "همه جهت‌ها", allStatuses: "همه وضعیت‌ها",
     apply: "اعمال فیلتر", customer: "مشتری", date: "تاریخ", description: "نظارت بر پیام‌های Meta Cloud API و وضعیت تحویل در محیط آزمایشی.",
-    detail: "جزئیات", direction: "جهت", empty: "پیامی با این فیلترها پیدا نشد.", message: "پیام", of: "از", page: "صفحه",
+    detail: "عملیات", direction: "جهت", empty: "پیامی با این فیلترها پیدا نشد.", message: "پیام", of: "از", page: "صفحه",
     status: "وضعیت", testNote: "پیام‌ها از شماره آزمایشی Meta WhatsApp ارسال می‌شوند، نه شماره اصلی شرکت.", title: "پیام‌های واتساپ",
     type: "نوع", unknown: "شماره ناشناس", view: "مشاهده", sendProperty: "ارسال ملک به مشتری",
   };
@@ -72,7 +73,7 @@ export default async function WhatsAppPage({ searchParams }: { searchParams: Pro
         <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
           <table className="w-full min-w-[900px] text-start text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500"><tr><th className="p-3">{t.date}</th><th className="p-3">{t.customer}</th><th className="p-3">{t.direction}</th><th className="p-3">{t.type}</th><th className="p-3">{t.agent}</th><th className="p-3">{t.status}</th><th className="p-3">{t.detail}</th></tr></thead>
-            <tbody>{(items as Item[]).map((message) => { const customer = message.customerId as Item | undefined; const agent = message.agentId as Item | undefined; return <tr className="border-b border-slate-100" key={message._id}><td className="p-3 text-slate-500">{formatGregorianDateTime(message.createdAt, locale)}</td><td className="p-3">{String(customer?.fullName || t.unknown)}</td><td className="p-3">{translateLiteral(String(message.direction), locale)}</td><td className="p-3">{translateLiteral(String(message.messageType), locale)}</td><td className="p-3">{String(agent?.fullName || agent?.name || "-")}</td><td className="p-3"><span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusClass[String(message.status)] || "bg-slate-100 text-slate-700"}`}>{translateLiteral(String(message.status), locale)}</span></td><td className="p-3"><Link className="font-medium text-slate-700 hover:underline" href={`/whatsapp/${message._id}`}>{t.view}</Link></td></tr>; })}</tbody>
+            <tbody>{(items as Item[]).map((message) => { const customer = message.customerId as Item | undefined; const agent = message.agentId as Item | undefined; return <tr className="border-b border-slate-100" key={message._id}><td className="p-3 text-slate-500">{formatGregorianDateTime(message.createdAt, locale)}</td><td className="p-3">{String(customer?.fullName || t.unknown)}</td><td className="p-3">{translateLiteral(String(message.direction), locale)}</td><td className="p-3">{translateLiteral(String(message.messageType), locale)}</td><td className="p-3">{String(agent?.fullName || agent?.name || "-")}</td><td className="p-3"><span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusClass[String(message.status)] || "bg-slate-100 text-slate-700"}`}>{translateLiteral(String(message.status), locale)}</span></td><td className="p-3"><div className="flex items-center gap-3"><Link className="font-medium text-slate-700 hover:underline" href={`/whatsapp/${message._id}`}>{t.view}</Link><WhatsAppMessageDeleteButton messageId={String(message._id)} /></div></td></tr>; })}</tbody>
           </table>
           {!items.length ? <p className="p-5 text-sm text-slate-500">{t.empty}</p> : null}
         </div>

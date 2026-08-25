@@ -9,6 +9,7 @@ import {
   Loader2,
   RefreshCw,
   SearchCheck,
+  Trash2,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -83,6 +84,7 @@ export function ImportCenterClient() {
   const [jobs, setJobs] = useState<ImportJob[]>([]);
   const [selectedJob, setSelectedJob] = useState<ImportJob | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deletingJobId, setDeletingJobId] = useState("");
   const [loadingStep, setLoadingStep] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -181,6 +183,30 @@ export function ImportCenterClient() {
     const result = (await response.json()) as ApiResponse<ImportJob>;
     setLoadingStep("");
     if (result.success && result.data) setSelectedJob(result.data);
+  }
+
+  async function deleteJob(jobId: string) {
+    if (!window.confirm(t.confirmDeleteHistory)) return;
+
+    setDeletingJobId(jobId);
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch(`/api/import/jobs/${encodeURIComponent(jobId)}`, { method: "DELETE" });
+      const result = (await response.json()) as ApiResponse<{ deleted: boolean }>;
+      if (!response.ok || !result.success) {
+        setError(result.error?.message || t.deleteHistoryFailed);
+        return;
+      }
+
+      setJobs((current) => current.filter((job) => job._id !== jobId));
+      if (selectedJob?._id === jobId) setSelectedJob(null);
+      setMessage(t.historyDeleted);
+    } catch {
+      setError(t.deleteHistoryFailed);
+    } finally {
+      setDeletingJobId("");
+    }
   }
 
   async function postImportForm<T>(url: string, uploadFile: File, uploadSheetName = "", uploadMapping: ImportMapping = mapping) {
@@ -480,9 +506,22 @@ export function ImportCenterClient() {
                   </td>
                   <td className="px-3 py-3 text-slate-500">{formatGregorianDateTime(job.createdAt, locale)}</td>
                   <td className="px-3 py-3">
-                    <button className="rounded-md border border-slate-300 px-3 py-2 text-xs" onClick={() => void loadJob(job._id)} type="button">
-                      {t.details}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button className="rounded-md border border-slate-300 px-3 py-2 text-xs" disabled={Boolean(deletingJobId)} onClick={() => void loadJob(job._id)} type="button">
+                        {t.details}
+                      </button>
+                      <button
+                        aria-label={deletingJobId === job._id ? t.deletingHistory : t.deleteHistory}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-red-200 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        disabled={Boolean(deletingJobId)}
+                        onClick={() => void deleteJob(job._id)}
+                        title={t.deleteHistory}
+                        type="button"
+                      >
+                        {deletingJobId === job._id ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+                        {deletingJobId === job._id ? t.deletingHistory : t.deleteHistory}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -640,10 +679,10 @@ function formatPreviewValue(value: unknown, locale: AppLocale) {
 function importCopy(locale: AppLocale) {
   return locale === "tr" ? {
     actions: "İşlemler", areYouSure: "Emin misiniz?", autoMap: "Otomatik eşleştir", cancel: "İptal", columns: "sütun", configureFile: "Dosyayı yapılandır:",
-    confirmImport: "Aktarımı onayla", crmField: "CRM alanı", customers: "Müşteriler", data: "Veri", date: "Tarih", details: "Ayrıntılar", downloadErrors: "Hata raporunu indir",
+    confirmDeleteHistory: "Bu aktarım geçmişi ve raporu kalıcı olarak silinsin mi? Daha önce aktarılan kayıtlar silinmez.", confirmImport: "Aktarımı onayla", crmField: "CRM alanı", customers: "Müşteriler", data: "Veri", date: "Tarih", deleteHistory: "Sil", deleteHistoryFailed: "Aktarım geçmişi silinemedi.", deletingHistory: "Siliniyor...", details: "Ayrıntılar", downloadErrors: "Hata raporunu indir",
     dropFile: "CSV veya Excel dosyasını buraya sürükleyin ya da seçin", duplicate: "Tekrar", duplicateColumn: "Tekrarlanan sütun algılandı", error: "Hata", errorsWarnings: "Hatalar / uyarılar",
     file: "Dosya", fileColumn: "Dosya sütunu", fileError: "Dosya işlenemiyor.", fileFormats: "En fazla 10 MB; CSV, XLSX ve XLS", fileName: "Dosya adı", fileTooLarge: "Dosya boyutu 10 MB sınırını aşıyor.",
-    history: "Veri aktarım geçmişi", ignore: "Yoksay", importAction: "Aktar", importFailed: "Veri aktarımı başarısız oldu.", importReport: "Aktarım raporu", importSuccess: "kayıt başarıyla aktarıldı.",
+    history: "Veri aktarım geçmişi", historyDeleted: "Aktarım geçmişi veritabanından silindi.", ignore: "Yoksay", importAction: "Aktar", importFailed: "Veri aktarımı başarısız oldu.", importReport: "Aktarım raporu", importSuccess: "kayıt başarıyla aktarıldı.",
     imported: "Aktarılan", importedReady: "kayıt aktarıldı ve eşleştirmeye hazır.", importing: "Veriler gruplar halinde aktarılıyor...", invalid: "Geçersiz", loadingDetails: "Aktarım ayrıntıları alınıyor...",
     matchingNote: "Veriler aktarılacak ve eşleştirmeye hazırlanacak. Toplu eşleştirme bu istekte çalıştırılmaz.", noErrors: "Kayıtlı hata yok.", projects: "Projeler", properties: "Gayrimenkuller",
     readingFile: "Dosya okunuyor...", ready: "Aktarıma hazır", recordsDetected: "kayıt algılandı.", row: "Satır", rows: "satır", rowsReady: "satır aktarıma hazır.", sampleValue: "Örnek değer",
@@ -651,10 +690,10 @@ function importCopy(locale: AppLocale) {
     type: "Tür", unknown: "Bilinmiyor", user: "Kullanıcı", validRecord: "geçerli kayıt", validatePreview: "Doğrula ve önizle", validating: "Satırlar doğrulanıyor ve tekrarlar denetleniyor...", validationFailed: "Doğrulama başarısız oldu.",
   } : {
     actions: "عملیات", areYouSure: "آیا مطمئن هستید؟", autoMap: "نگاشت خودکار", cancel: "انصراف", columns: "ستون", configureFile: "تنظیم فایل",
-    confirmImport: "تأیید ورود", crmField: "فیلد CRM", customers: "مشتریان", data: "داده", date: "تاریخ", details: "جزئیات", downloadErrors: "دانلود گزارش خطاها",
+    confirmDeleteHistory: "این سابقه و گزارش ورود برای همیشه حذف شود؟ اطلاعاتی که قبلاً وارد شده‌اند حذف نخواهند شد.", confirmImport: "تأیید ورود", crmField: "فیلد CRM", customers: "مشتریان", data: "داده", date: "تاریخ", deleteHistory: "حذف", deleteHistoryFailed: "حذف سابقه ورود ناموفق بود.", deletingHistory: "در حال حذف...", details: "جزئیات", downloadErrors: "دانلود گزارش خطاها",
     dropFile: "فایل CSV یا Excel را اینجا بکشید یا انتخاب کنید", duplicate: "تکراری", duplicateColumn: "ستون تکراری شناسایی شد", error: "خطا", errorsWarnings: "خطاها / هشدارها",
     file: "فایل", fileColumn: "ستون فایل", fileError: "فایل قابل پردازش نیست.", fileFormats: "حداکثر 10MB، فرمت‌های CSV، XLSX و XLS", fileName: "نام فایل", fileTooLarge: "حجم فایل بیشتر از حد مجاز 10MB است.",
-    history: "تاریخچه ورود اطلاعات", ignore: "نادیده گرفتن", importAction: "ورود", importFailed: "ورود اطلاعات ناموفق بود.", importReport: "گزارش ورود", importSuccess: "رکورد با موفقیت وارد شد.",
+    history: "تاریخچه ورود اطلاعات", historyDeleted: "سابقه ورود از دیتابیس حذف شد.", ignore: "نادیده گرفتن", importAction: "ورود", importFailed: "ورود اطلاعات ناموفق بود.", importReport: "گزارش ورود", importSuccess: "رکورد با موفقیت وارد شد.",
     imported: "وارد شده", importedReady: "رکورد وارد شد و برای تطبیق آماده است.", importing: "در حال ورود گروهی اطلاعات...", invalid: "نامعتبر", loadingDetails: "در حال دریافت جزئیات ورود...",
     matchingNote: "داده‌ها وارد می‌شوند و برای تطبیق آماده خواهند بود. محاسبه گروهی تطبیق در این درخواست اجرا نمی‌شود.", noErrors: "خطایی ثبت نشده است.", projects: "پروژه‌ها", properties: "املاک",
     readingFile: "در حال خواندن فایل...", ready: "آماده ورود", recordsDetected: "رکورد شناسایی شد.", row: "ردیف", rows: "ردیف", rowsReady: "ردیف آماده ورود است.", sampleValue: "نمونه مقدار",
