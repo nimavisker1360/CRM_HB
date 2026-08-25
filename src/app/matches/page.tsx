@@ -323,7 +323,7 @@ function CustomerRequirementCard({ customer, locale, properties, t }: { customer
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge>{translateLiteral(String(customer.status || "-"), locale)}</Badge>
-          {properties.length ? <ManualPropertyWhatsApp customer={customer} properties={properties} t={t} /> : <span className="text-xs font-bold text-amber-700">{t.noActiveProperties}</span>}
+          <ManualPropertyWhatsApp customer={customer} properties={properties} t={t} />
           <Link className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-xs font-bold text-slate-700 hover:bg-white" href={`/customers/${customer._id}`}>
             {t.customerProfile}
             <ArrowLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
@@ -356,6 +356,7 @@ function ManualPropertyWhatsApp({ customer, properties, t }: { customer: DetailR
         phone: customer.phone ? String(customer.phone) : undefined,
         whatsapp: customer.whatsapp ? String(customer.whatsapp) : undefined,
       }}
+      includeActivePropertyCatalog
       preselectedType="PROPERTY"
       properties={properties.map((property) => ({
         city: property.city ? String(property.city) : undefined,
