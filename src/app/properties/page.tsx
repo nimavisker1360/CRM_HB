@@ -62,6 +62,7 @@ export default async function PropertiesPage() {
         fields={[
           { label: "عنوان", name: "title", required: true, section: "اطلاعات اصلی" },
           { label: "کد ملک", name: "propertyCode", required: true, section: "اطلاعات اصلی" },
+          { label: "پروژه", name: "projectId", optionEndpoint: "/api/projects", optionLabel: "name", section: "اطلاعات اصلی", type: "select" },
           { label: "نوع معامله", name: "transactionType", options: transactionOptions, required: true, section: "اطلاعات اصلی", type: "select" },
           { label: "نوع ملک", name: "propertyType", options: propertyTypeOptions, required: true, section: "اطلاعات اصلی", type: "select" },
           { label: "وضعیت", name: "status", options: propertyStatusOptions, section: "اطلاعات اصلی", type: "select" },
@@ -78,7 +79,6 @@ export default async function PropertiesPage() {
           { label: "سن بنا", name: "buildingAge", section: "مشخصات", type: "number" },
           { label: "قیمت", name: "price", required: true, section: "قیمت", type: "number" },
           { label: "ارز", name: "currency", options: currencyOptions, section: "قیمت", type: "select" },
-          { label: "پروژه", name: "projectId", optionEndpoint: "/api/projects", optionLabel: "name", section: "ارتباطات", type: "select" },
           { label: "مشاور", name: "assignedAgentId", optionEndpoint: "/api/agents", optionLabel: "fullName", section: "ارتباطات", type: "select" },
           { label: "بالکن", name: "balcony", section: "امکانات", type: "checkbox" },
           { label: "پارکینگ", name: "parking", section: "امکانات", type: "checkbox" },
