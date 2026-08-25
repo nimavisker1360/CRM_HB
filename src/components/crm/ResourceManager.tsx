@@ -49,6 +49,7 @@ export type FieldConfig = {
   optionEndpoint?: string;
   optionLabel?: string;
   options?: FieldOption[];
+  placeholder?: string;
   required?: boolean;
   section?: string;
   type?: "checkbox" | "date" | "image-upload" | "number" | "select" | "textarea" | "text" | "video-upload";
@@ -1199,6 +1200,7 @@ function FormControl({
   const options = field.options || lookups[field.name] || [];
   const className = "h-10 rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-950";
   const fieldLabel = <FieldLabel field={field} locale={locale} />;
+  const selectPlaceholder = field.placeholder ? translateLiteral(field.placeholder, locale) : locale === "tr" ? "Seçin" : "انتخاب کنید";
 
   if (isMediaUploadField(field)) {
     return <MediaUploadControl field={field} locale={locale} value={value} />;
@@ -1285,7 +1287,7 @@ function FormControl({
         />
       ) : field.type === "select" || options.length ? (
         <select className={className} defaultValue={String(value)} name={field.name} required={field.required}>
-          <option value="">{locale === "tr" ? "Seçin" : "انتخاب کنید"}</option>
+          <option value="">{selectPlaceholder}</option>
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {translateLiteral(option.label, locale)}
@@ -1309,7 +1311,7 @@ function FormControl({
           lang={field.type === "date" ? "en-GB" : undefined}
           name={field.name}
           pattern={field.name === "whatsapp" ? "\\+[1-9][0-9\\s().-]{7,20}" : undefined}
-          placeholder={field.name === "whatsapp" ? "+90 5XX XXX XX XX" : undefined}
+          placeholder={field.name === "whatsapp" ? "+90 5XX XXX XX XX" : field.placeholder ? translateLiteral(field.placeholder, locale) : undefined}
           required={field.required}
           type={field.type === "date" ? "datetime-local" : isPhoneField(field.name) ? "tel" : field.type || "text"}
         />
