@@ -432,6 +432,19 @@ export async function getWhatsAppMessageById(id: string, session: SessionUser) {
   return serializeMongo(message);
 }
 
+export async function deleteWhatsAppMessage(id: string, session: SessionUser) {
+  await connectToDatabase();
+  const _id = objectIdOrUndefined(id);
+  if (!_id) return false;
+
+  const message = await WhatsAppMessage.findById(_id).lean<RecordLike | null>();
+  if (!message) return false;
+  assertCanAccessMessage(session, message);
+
+  const result = await WhatsAppMessage.deleteOne({ _id });
+  return result.deletedCount === 1;
+}
+
 export function getPublicWhatsAppConfiguration() {
   return publicWhatsAppConfiguration();
 }
