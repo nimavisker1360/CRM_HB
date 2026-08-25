@@ -1301,7 +1301,7 @@ function FormControl({
         />
       ) : (
         <input
-          autoComplete={isPhoneField(field.name) ? "tel" : undefined}
+          autoComplete={field.name === "propertyCode" ? "off" : isPhoneField(field.name) ? "tel" : undefined}
           className={`${className} ${isPhoneField(field.name) ? "text-left" : ""}`}
           defaultValue={String(value)}
           dir={field.type === "date" || isPhoneField(field.name) ? "ltr" : undefined}
