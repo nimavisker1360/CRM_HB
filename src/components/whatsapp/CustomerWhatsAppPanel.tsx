@@ -78,7 +78,7 @@ export function CustomerWhatsAppPanel(props: {
           </div>
           <p className="mt-1 text-sm text-slate-500">{t.note}</p>
         </div>
-        <WhatsAppComposer {...props} onSent={load} />
+        <WhatsAppComposer {...props} includeActivePropertyCatalog onSent={load} />
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[680px] text-right text-sm">

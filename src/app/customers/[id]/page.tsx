@@ -136,6 +136,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         id: String(property?._id || ""),
         images: Array.isArray(property?.images) ? property.images.map(String) : [],
         price: property?.price ? Number(property.price) : undefined,
+        propertyCode: property?.propertyCode ? String(property.propertyCode) : undefined,
         rooms: property?.rooms ? Number(property.rooms) : undefined,
         title: String(property?.title || "Property"),
         videoUrl: property?.videoUrl ? String(property.videoUrl) : undefined,

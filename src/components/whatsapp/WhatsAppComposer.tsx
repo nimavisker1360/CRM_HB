@@ -9,6 +9,40 @@ import {
 } from "@/services/whatsapp/whatsapp.templates";
 import { useLanguage } from "@/components/i18n/LanguageProvider";
 
+function normalizePropertySearch(value: unknown) {
+  return String(value || "").trim().toLocaleLowerCase("tr-TR").replace(/\s+/g, " ");
+}
+
+function propertySearchValue(property: WhatsAppPropertyOption) {
+  return normalizePropertySearch([
+    property.propertyCode,
+    property.title,
+    property.city,
+    property.district,
+  ].filter(Boolean).join(" "));
+}
+
+function propertyOptionLabel(property: WhatsAppPropertyOption) {
+  const location = [property.city, property.district].filter(Boolean).join(" / ");
+  return [property.title, property.propertyCode, location].filter(Boolean).join(" — ");
+}
+
+function propertyOptionFromApi(property: Record<string, unknown>): WhatsAppPropertyOption {
+  return {
+    city: property.city ? String(property.city) : undefined,
+    currency: property.currency ? String(property.currency) : undefined,
+    district: property.district ? String(property.district) : undefined,
+    grossArea: property.grossArea === undefined ? undefined : Number(property.grossArea),
+    id: String(property._id || ""),
+    images: Array.isArray(property.images) ? property.images.map(String) : [],
+    price: property.price === undefined ? undefined : Number(property.price),
+    propertyCode: property.propertyCode ? String(property.propertyCode) : undefined,
+    rooms: property.rooms === undefined ? undefined : Number(property.rooms),
+    title: String(property.title || property.propertyCode || "Property"),
+    videoUrl: property.videoUrl ? String(property.videoUrl) : undefined,
+  };
+}
+
 export type WhatsAppPropertyOption = {
   city?: string;
   currency?: string;
@@ -17,6 +51,7 @@ export type WhatsAppPropertyOption = {
   id: string;
   images?: string[];
   price?: number;
+  propertyCode?: string;
   rooms?: number;
   title: string;
   videoUrl?: string;
@@ -33,6 +68,7 @@ type Props = {
   buttonLabel?: string;
   customer: { fullName: string; id: string; phone?: string; whatsapp?: string };
   followUp?: { id: string; note?: string };
+  includeActivePropertyCatalog?: boolean;
   matches?: WhatsAppMatchOption[];
   onSent?: () => void;
   preselectedMatchId?: string;
@@ -61,6 +97,7 @@ export function WhatsAppComposer({
   buttonLabel,
   customer,
   followUp,
+  includeActivePropertyCatalog = false,
   matches = [],
   onSent,
   preselectedMatchId,
@@ -77,7 +114,9 @@ export function WhatsAppComposer({
     media: "fotoğraf/video dosyası bu mesajla gönderilecek.", mediaRule: "Medya yalnızca müşteri son 24 saat içinde WhatsApp üzerinden mesaj gönderdiyse gönderilebilir.",
     messageSent: "Mesaj gönderildi.", messageType: "Mesaj türü", notConfigured: "Yapılandırılmadı", phone: "Telefon numarası", property: "Gayrimenkul",
     prepareStartTemplate: "Sohbet başlatma şablonunu gönder",
-    propertyIntro: "Gayrimenkul tanıtımı", recipient: "Alıcı", sendError: "WhatsApp mesajı gönderilemedi.", sending: "Gönderiliyor...", templateMissing: "Meta test şablonu henüz yapılandırılmadı.",
+    activeProperties: "Tüm aktif gayrimenkuller", catalogError: "Aktif gayrimenkuller yüklenemedi.", catalogLoading: "Aktif gayrimenkuller yükleniyor...",
+    noPropertyResult: "Aramanızla eşleşen aktif gayrimenkul bulunamadı.", propertyIntro: "Gayrimenkul tanıtımı", propertySearch: "Kod, başlık, şehir veya bölge ara",
+    recipient: "Alıcı", recommendedProperties: "Önerilen gayrimenkuller", sendError: "WhatsApp mesajı gönderilemedi.", sending: "Gönderiliyor...", templateMissing: "Meta test şablonu henüz yapılandırılmadı.",
     templatePreview: (name: string, language: string) => `${name} adlı onaylı Meta şablonu ${language} dilinde gönderilecek.`, templateTest: "Meta test şablonu", text: "Metin",
     startTemplateSent: "Sohbet başlatma şablonu gönderildi. Müşterinin yanıtını bekleyin.", title: "WhatsApp mesajı gönder", whatsapp: "WhatsApp numarası",
   } : {
@@ -88,7 +127,9 @@ export function WhatsAppComposer({
     media: "فایل عکس/ویدیو همراه این پیام ارسال می‌شود.", mediaRule: "ارسال رسانه زمانی مجاز است که مشتری در ۲۴ ساعت اخیر در واتساپ پیام داده باشد.",
     messageSent: "پیام ارسال شد.", messageType: "نوع پیام", notConfigured: "تنظیم نشده", phone: "شماره تلفن", property: "ملک",
     prepareStartTemplate: "ارسال قالب شروع گفتگو",
-    propertyIntro: "معرفی ملک", recipient: "گیرنده", sendError: "ارسال پیام واتساپ ناموفق بود.", sending: "در حال ارسال...", templateMissing: "قالب آزمایشی Meta هنوز تنظیم نشده است.",
+    activeProperties: "همه املاک فعال", catalogError: "دریافت فهرست املاک فعال ناموفق بود.", catalogLoading: "در حال دریافت املاک فعال...",
+    noPropertyResult: "ملک فعالی مطابق جست‌وجوی شما پیدا نشد.", propertyIntro: "معرفی ملک", propertySearch: "جست‌وجوی کد، عنوان، شهر یا منطقه",
+    recipient: "گیرنده", recommendedProperties: "املاک پیشنهادی", sendError: "ارسال پیام واتساپ ناموفق بود.", sending: "در حال ارسال...", templateMissing: "قالب آزمایشی Meta هنوز تنظیم نشده است.",
     templatePreview: (name: string, language: string) => `قالب تأییدشده Meta با نام «${name}» و زبان ${language} ارسال می‌شود.`, templateTest: "قالب تست Meta", text: "متن",
     startTemplateSent: "قالب شروع گفتگو ارسال شد؛ اکنون منتظر پاسخ مشتری بمانید.", title: "ارسال پیام واتساپ", whatsapp: "شماره واتساپ",
   }, [locale]);
@@ -102,6 +143,10 @@ export function WhatsAppComposer({
   const [config, setConfig] = useState<PublicConfig | null>(null);
   const [messageType, setMessageType] = useState(preselectedType);
   const [propertyId, setPropertyId] = useState(preselectedPropertyId || properties[0]?.id || "");
+  const [propertySearch, setPropertySearch] = useState("");
+  const [catalogProperties, setCatalogProperties] = useState<WhatsAppPropertyOption[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogError, setCatalogError] = useState("");
   const [matchId, setMatchId] = useState(preselectedMatchId || matches[0]?.id || "");
   const [text, setText] = useState("");
   const [confirming, setConfirming] = useState(false);
@@ -119,10 +164,64 @@ export function WhatsAppComposer({
       .catch(() => setError(t.connectionError));
   }, [config, open, t.connectionError]);
 
+  useEffect(() => {
+    if (!open || !includeActivePropertyCatalog || messageType !== "PROPERTY") return;
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setCatalogLoading(true);
+      setCatalogError("");
+      try {
+        const params = new URLSearchParams({ limit: "100", status: "ACTIVE" });
+        const query = propertySearch.trim();
+        if (query) params.set("q", query);
+        const response = await fetch(`/api/properties?${params.toString()}`, { signal: controller.signal });
+        const result = (await response.json()) as {
+          data?: { items?: Array<Record<string, unknown>> };
+          success: boolean;
+        };
+        if (!response.ok || !result.success) throw new Error(t.catalogError);
+        setCatalogProperties((result.data?.items || []).map(propertyOptionFromApi));
+      } catch (loadError) {
+        if (loadError instanceof DOMException && loadError.name === "AbortError") return;
+        setCatalogError(t.catalogError);
+      } finally {
+        if (!controller.signal.aborted) setCatalogLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [includeActivePropertyCatalog, messageType, open, propertySearch, t.catalogError]);
+
+  const availableProperties = useMemo(() => {
+    const options = new Map<string, WhatsAppPropertyOption>();
+    for (const property of [...properties, ...catalogProperties]) {
+      if (property.id && !options.has(property.id)) options.set(property.id, property);
+    }
+    return Array.from(options.values());
+  }, [catalogProperties, properties]);
+  const recommendedPropertyIds = useMemo(
+    () => new Set(matches.map((match) => match.property.id)),
+    [matches],
+  );
+  const visibleProperties = useMemo(() => {
+    const query = normalizePropertySearch(propertySearch);
+    if (!query) return availableProperties;
+    return availableProperties.filter((property) => propertySearchValue(property).includes(query));
+  }, [availableProperties, propertySearch]);
+  const recommendedProperties = visibleProperties.filter((property) => recommendedPropertyIds.has(property.id));
+  const activeProperties = visibleProperties.filter((property) => !recommendedPropertyIds.has(property.id));
+  const selectedPropertyId = visibleProperties.some((property) => property.id === propertyId)
+    ? propertyId
+    : visibleProperties[0]?.id || "";
+
   const recipient = customer.whatsapp || customer.phone || "";
   const recipientSource = customer.whatsapp ? t.whatsapp : t.phone;
-  const selectedProperty = properties.find((item) => item.id === propertyId)
-    || matches.find((item) => item.property.id === propertyId)?.property;
+  const selectedProperty = availableProperties.find((item) => item.id === selectedPropertyId)
+    || matches.find((item) => item.property.id === selectedPropertyId)?.property;
   const selectedMatch = matches.find((item) => item.id === matchId);
   const selectedMediaProperty = messageType === "MATCH" ? selectedMatch?.property : selectedProperty;
   const selectedMediaCount = (selectedMediaProperty?.images?.length || 0) + (selectedMediaProperty?.videoUrl ? 1 : 0);
@@ -142,6 +241,8 @@ export function WhatsAppComposer({
     setError("");
     setErrorCode("");
     setSuccess("");
+    setPropertySearch("");
+    setCatalogError("");
     setRequestId(createRequestId());
   }
 
@@ -162,7 +263,7 @@ export function WhatsAppComposer({
           language: outgoingType === "TEMPLATE" ? config?.templateLanguage : undefined,
           matchId: outgoingType === "MATCH" ? matchId : undefined,
           messageType: outgoingType,
-          propertyId: outgoingType === "PROPERTY" ? propertyId : undefined,
+          propertyId: outgoingType === "PROPERTY" ? selectedPropertyId : undefined,
           templateName: outgoingType === "TEMPLATE" ? config?.templateName || undefined : undefined,
           text: outgoingType === "TEXT" ? text : outgoingType === "TEMPLATE" ? undefined : preview,
         }),
@@ -230,7 +331,7 @@ export function WhatsAppComposer({
                   value={messageType}
                 >
                   <option value="TEMPLATE">{t.templateTest}</option>
-                  {properties.length ? <option value="PROPERTY">{t.propertyIntro}</option> : null}
+                  {properties.length || includeActivePropertyCatalog ? <option value="PROPERTY">{t.propertyIntro}</option> : null}
                   {matches.length ? <option value="MATCH">{t.matchOffer}</option> : null}
                   {followUp ? <option value="FOLLOWUP">{t.followUp}</option> : null}
                   <option value="TEXT">{t.freeText}</option>
@@ -241,9 +342,35 @@ export function WhatsAppComposer({
               </label>
               {messageType === "PROPERTY" ? (
                 <label className="text-sm text-slate-700 sm:col-span-2">{t.property}
-                  <select className="mt-1 h-10 w-full rounded-md border border-slate-300 bg-white px-3" onChange={(event) => setPropertyId(event.target.value)} value={propertyId}>
-                    {properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
+                  {includeActivePropertyCatalog ? (
+                    <input
+                      className="mt-1 h-10 w-full rounded-md border border-slate-300 bg-white px-3"
+                      onChange={(event) => setPropertySearch(event.target.value)}
+                      placeholder={t.propertySearch}
+                      type="search"
+                      value={propertySearch}
+                    />
+                  ) : null}
+                  <select
+                    className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 disabled:bg-slate-50"
+                    disabled={!visibleProperties.length}
+                    onChange={(event) => setPropertyId(event.target.value)}
+                    value={selectedPropertyId}
+                  >
+                    {recommendedProperties.length ? (
+                      <optgroup label={t.recommendedProperties}>
+                        {recommendedProperties.map((property) => <option key={property.id} value={property.id}>{propertyOptionLabel(property)}</option>)}
+                      </optgroup>
+                    ) : null}
+                    {activeProperties.length ? (
+                      <optgroup label={t.activeProperties}>
+                        {activeProperties.map((property) => <option key={property.id} value={property.id}>{propertyOptionLabel(property)}</option>)}
+                      </optgroup>
+                    ) : null}
                   </select>
+                  {catalogLoading ? <span className="mt-1 block text-xs text-slate-500">{t.catalogLoading}</span> : null}
+                  {catalogError ? <span className="mt-1 block text-xs text-red-600">{catalogError}</span> : null}
+                  {!catalogLoading && !catalogError && !visibleProperties.length ? <span className="mt-1 block text-xs text-amber-700">{t.noPropertyResult}</span> : null}
                 </label>
               ) : null}
               {messageType === "MATCH" ? (
@@ -302,7 +429,7 @@ export function WhatsAppComposer({
               {!confirming ? (
                 <button
                   className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white disabled:opacity-50"
-                  disabled={!recipient || !config?.configured || (messageType === "TEXT" && !text.trim())}
+                  disabled={!recipient || !config?.configured || (messageType === "PROPERTY" && !selectedPropertyId) || (messageType === "TEXT" && !text.trim())}
                   onClick={() => setConfirming(true)}
                   type="button"
                 >
