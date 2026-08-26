@@ -59,6 +59,13 @@ export default async function FollowUpsPage({ searchParams }: { searchParams: Pa
     { label: "وضعیت", name: "status", options: statusOptions, section: "زمان‌بندی", type: "select" },
     { label: "یادداشت", name: "note", section: "جزئیات", type: "textarea" },
     { label: "نتیجه", name: "result", section: "جزئیات", type: "textarea" },
+    ...(canChooseAgent ? [{
+      label: "پیام مدیر برای مشاور",
+      name: "managerMessage",
+      placeholder: "پیشنهاد، نکته یا دستور لازم برای این پیگیری را بنویسید...",
+      section: "پیام مدیریت",
+      type: "textarea" as const,
+    }] : []),
   ];
 
   return (
@@ -66,7 +73,7 @@ export default async function FollowUpsPage({ searchParams }: { searchParams: Pa
       <PageHeader
         action={<CalendarCheck className="size-5 text-slate-400" />}
         title={scope.effectiveAgentId ? "پیگیری‌های مشاور" : "پیگیری‌ها"}
-        description="تماس‌ها، واتساپ، ایمیل، جلسه و بازدید ملک با محدوده امن سمت سرور."
+        description="مدیریت پیگیری‌ها، اعلان خودکار تغییرات و امکان ارسال پیام مستقیم مدیر به مشاور."
       />
       <ResourceManager
         archivePayload={{ status: "CANCELLED" }}
@@ -78,9 +85,11 @@ export default async function FollowUpsPage({ searchParams }: { searchParams: Pa
           { key: "status", label: "وضعیت" },
           { key: "note", label: "یادداشت" },
           { key: "result", label: "نتیجه" },
+          { key: "managerMessage", label: "پیام مدیر" },
         ]}
         canDelete={session.role === "ADMIN"}
         createDefaults={scope.effectiveAgentId ? scopedAgentFilter : undefined}
+        detailBasePath="/follow-ups"
         endpoint="/api/follow-ups"
         fields={fields}
         filters={[

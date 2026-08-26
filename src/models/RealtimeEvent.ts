@@ -9,7 +9,7 @@ const realtimeEventSchema = new Schema(
     resource: { type: String, enum: ["agents", "follow-ups", "notifications"] },
     type: {
       type: String,
-      enum: ["agent.avatar.updated", "followup.created", "notification.created"],
+      enum: ["agent.avatar.updated", "followup.created", "followup.updated", "notification.created"],
       required: true,
       index: true,
     },
@@ -25,7 +25,7 @@ realtimeEventSchema.index({ userId: 1, createdAt: 1 });
 
 const existingRealtimeModel = models.RealtimeEvent;
 const existingEventTypes = existingRealtimeModel?.schema.path("type")?.options?.enum as string[] | undefined;
-if (existingRealtimeModel && (!existingRealtimeModel.schema.path("eventId") || !existingEventTypes?.includes("agent.avatar.updated"))) {
+if (existingRealtimeModel && (!existingRealtimeModel.schema.path("eventId") || !existingEventTypes?.includes("followup.updated"))) {
   deleteModel("RealtimeEvent");
 }
 

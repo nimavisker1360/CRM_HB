@@ -9,6 +9,7 @@ import { notificationDeduplicationKey } from "@/services/notifications/notificat
 import {
   buildFollowUpDueNotification,
   buildFollowUpOverdueNotification,
+  buildFollowUpUpdatedNotification,
   buildNewMatchNotification,
 } from "@/services/notifications/notification.templates";
 import { safeNotificationActionUrl } from "@/services/notifications/notification-url";
@@ -76,11 +77,20 @@ describe("notification deduplication and templates", () => {
     });
     const due = buildFollowUpDueNotification({ customerName: "Ahmet Yilmaz", followUpId: "follow-1" });
     const overdue = buildFollowUpOverdueNotification({ customerName: "Ahmet Yilmaz", followUpId: "follow-1" });
+    const updated = buildFollowUpUpdatedNotification({
+      actorName: "Nima Admin",
+      customerName: "Ahmet Yilmaz",
+      followUpId: "follow-1",
+      managerMessage: "قبل از تماس فایل جدید را بررسی کن.",
+    });
 
     expect(match.message).toContain("Ahmet Yilmaz");
     expect(match.message).toContain("96%");
     expect(due.title).toBe("پیگیری امروز");
     expect(overdue.title).toBe("پیگیری عقب‌افتاده");
+    expect(updated.title).toBe("پیام جدید مدیر درباره پیگیری");
+    expect(updated.message).toContain("قبل از تماس فایل جدید را بررسی کن.");
+    expect(updated.actionUrl).toBe("/follow-ups/follow-1");
     expect(safeNotificationActionUrl(match.actionUrl)).toBe("/matches/match-1");
   });
 

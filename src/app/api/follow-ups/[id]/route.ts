@@ -8,6 +8,8 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { serializeMongo } from "@/lib/serialize";
 import { followUpSchema } from "@/lib/validators";
 import { Customer, FollowUp } from "@/models";
+import { createFollowUpUpdatedNotification } from "@/services/notifications/notification.service";
+import { publishRealtimeEvent } from "@/services/realtime/realtime-bus";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +46,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     if (!_id) return jsonError("FOLLOW_UP_NOT_FOUND", "Follow-up not found.", 404);
 
     const parsed = followUpSchema.partial().parse(await request.json());
+    if (parsed.managerMessage !== undefined && !canManageAll(session)) {
+      throw new Error("FORBIDDEN");
+    }
     if (!canManageAll(session) && parsed.agentId) {
       throw new Error("FORBIDDEN");
     }
@@ -54,20 +59,33 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     }
 
     const query = canManageAll(session) ? { _id } : { _id, agentId: session.agentId || "__no_agent__" };
+    const existingFollowUp = await FollowUp.findOne(query).lean();
+    if (!existingFollowUp) return jsonError("FOLLOW_UP_NOT_FOUND", "Follow-up not found.", 404);
+    const managerMessageChanged =
+      parsed.managerMessage !== undefined &&
+      parsed.managerMessage.trim() !== String(existingFollowUp.managerMessage || "").trim();
     const statusPayload =
       parsed.status === "COMPLETED" ? { completedAt: new Date(), status: "COMPLETED" } : {};
+    const updateFields = cleanObject({
+      ...parsed,
+      ...statusPayload,
+      assignedAgent: parsed.agentId,
+      channel: parsed.type && parsed.type !== "PROPERTY_VISIT" && parsed.type !== "OTHER" ? parsed.type : undefined,
+      customer: parsed.customerId,
+      dueAt: parsed.scheduledAt,
+      notes: parsed.note,
+      title: parsed.type ? `${parsed.type} follow-up` : undefined,
+      managerMessageBy: managerMessageChanged && parsed.managerMessage?.trim() ? session.userId : undefined,
+      managerMessageAt: managerMessageChanged && parsed.managerMessage?.trim() ? new Date() : undefined,
+    });
     const followUp = await FollowUp.findOneAndUpdate(
       query,
-      cleanObject({
-        ...parsed,
-        ...statusPayload,
-        assignedAgent: parsed.agentId,
-        channel: parsed.type && parsed.type !== "PROPERTY_VISIT" && parsed.type !== "OTHER" ? parsed.type : undefined,
-        customer: parsed.customerId,
-        dueAt: parsed.scheduledAt,
-        notes: parsed.note,
-        title: parsed.type ? `${parsed.type} follow-up` : undefined,
-      }),
+      {
+        $set: updateFields,
+        ...(managerMessageChanged && !parsed.managerMessage?.trim()
+          ? { $unset: { managerMessage: 1, managerMessageAt: 1, managerMessageBy: 1 } }
+          : {}),
+      },
       { returnDocument: "after", runValidators: true },
     );
 
@@ -79,6 +97,27 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       entityId: String(followUp._id),
       entityType: "FOLLOW_UP",
       session,
+    });
+
+    const customerId = followUp.customerId || followUp.customer;
+    const customer = customerId
+      ? await Customer.findById(customerId).select("fullName name").lean<{ fullName?: string; name?: string } | null>()
+      : null;
+    const agentId = followUp.agentId || followUp.assignedAgent;
+    await createFollowUpUpdatedNotification({
+      actorName: session.name,
+      agentId,
+      customerId,
+      customerName: String(customer?.fullName || customer?.name || ""),
+      followUpId: followUp._id,
+      managerMessage: managerMessageChanged ? parsed.managerMessage : undefined,
+    });
+
+    await publishRealtimeEvent({
+      agentId: agentId ? String(agentId) : undefined,
+      followUpId: String(followUp._id),
+      resource: "follow-ups",
+      type: "followup.updated",
     });
 
     return jsonOk(serializeMongo(followUp));

@@ -4,6 +4,9 @@ import { translateLiteral } from "@/lib/i18n";
 const titleTranslations: Record<string, string> = {
   "تطبیق جدید": "Yeni eşleşme",
   "پیگیری جدید برای شما ثبت شد": "Sizin için yeni bir takip oluşturuldu",
+  "پیگیری جدید همراه با پیام مدیر": "Yönetici mesajıyla yeni takip",
+  "پیگیری به‌روزرسانی شد": "Takip güncellendi",
+  "پیام جدید مدیر درباره پیگیری": "Takip hakkında yeni yönetici mesajı",
   "پیگیری امروز": "Bugünkü takip",
   "پیگیری عقب‌افتاده": "Gecikmiş takip",
   "مشتری جدید به شما اختصاص داده شد": "Size yeni bir müşteri atandı",
@@ -20,6 +23,15 @@ export function localizeNotificationText(value: string, locale: AppLocale) {
 
   match = value.match(/^پیگیری جدید(?: برای ساعت (.+))? برای (.+) به شما اختصاص داده شد\.$/);
   if (match) return `${match[2]} için yeni bir takip${match[1] ? ` saat ${match[1]}` : ""} size atandı.`;
+
+  match = value.match(/^پیگیری جدید(?: برای ساعت (.+?))? برای (.+?) به شما اختصاص داده شد\. پیام (.+?): (.+)$/);
+  if (match) return `${match[2]} için yeni bir takip${match[1] ? ` saat ${match[1]}` : ""} size atandı. ${match[3]} mesajı: ${match[4]}`;
+
+  match = value.match(/^پیام (.+?) درباره پیگیری (.+?): (.+)$/);
+  if (match) return `${match[1]} tarafından ${match[2]} takibi hakkında mesaj: ${match[3]}`;
+
+  match = value.match(/^پیگیری (.+?) توسط (.+?) به‌روزرسانی شد\.$/);
+  if (match) return `${match[1]} takibi ${match[2]} tarafından güncellendi.`;
 
   match = value.match(/^امروز(?: ساعت (.+))? باید با (.+) تماس بگیرید\.$/);
   if (match) return `Bugün${match[1] ? ` saat ${match[1]}` : ""} ${match[2]} ile iletişime geçmelisiniz.`;

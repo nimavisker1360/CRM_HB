@@ -21,6 +21,7 @@ const notificationSchema = new Schema(
       enum: [
         "NEW_MATCH",
         "FOLLOWUP_CREATED",
+        "FOLLOWUP_UPDATED",
         "FOLLOWUP_DUE",
         "FOLLOWUP_OVERDUE",
         "CUSTOMER_ASSIGNED",
@@ -80,7 +81,7 @@ const existingNotificationTypePath = models.Notification?.schema.path("type") as
 
 if (
   models.Notification &&
-  (!models.Notification.schema.path("recipientAgentId") || !existingNotificationTypePath?.enumValues?.includes("FOLLOWUP_CREATED"))
+  (!models.Notification.schema.path("recipientAgentId") || !existingNotificationTypePath?.enumValues?.includes("FOLLOWUP_UPDATED"))
 ) {
   deleteModel("Notification");
 }

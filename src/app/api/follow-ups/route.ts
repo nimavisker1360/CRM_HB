@@ -1,7 +1,7 @@
 import { handleApiError, jsonOk } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { assertCanAccessScopedRecord, agentScopeFilter, getAgentScope, resolveRequestedAgentId } from "@/lib/auth/agent-scope";
-import { requireRole } from "@/lib/auth/permissions";
+import { canManageAll, requireRole } from "@/lib/auth/permissions";
 import { requireSession } from "@/lib/auth/session";
 import { cleanObject, dateRangeForDay, getPagination, objectIdOrUndefined, paginationMeta } from "@/lib/crm-utils";
 import { connectToDatabase } from "@/lib/mongodb";
@@ -74,6 +74,9 @@ export async function POST(request: Request) {
     await connectToDatabase();
 
     const parsed = followUpSchema.parse(await request.json());
+    if (parsed.managerMessage !== undefined && !canManageAll(session)) {
+      throw new Error("FORBIDDEN");
+    }
     const customer = await Customer.findById(parsed.customerId).select("assignedAgentId assignedAgent fullName name").lean();
     if (!customer) throw new Error("FORBIDDEN");
     assertCanAccessScopedRecord(session, customer);
@@ -90,6 +93,8 @@ export async function POST(request: Request) {
         notes: parsed.note,
         title: `${parsed.type} follow-up`,
         createdBy: session.userId,
+        managerMessageBy: parsed.managerMessage?.trim() ? session.userId : undefined,
+        managerMessageAt: parsed.managerMessage?.trim() ? new Date() : undefined,
       }),
     );
 
@@ -104,11 +109,13 @@ export async function POST(request: Request) {
     });
 
     await createFollowUpCreatedNotification({
+      actorName: session.name,
       agentId,
       customerId: parsed.customerId,
       customerName: String(customer.fullName || customer.name || ""),
       dueAt: parsed.scheduledAt,
       followUpId: followUp._id,
+      managerMessage: parsed.managerMessage,
     });
 
     await publishRealtimeEvent({

@@ -9,9 +9,11 @@ type MatchTemplateInput = {
 };
 
 type FollowUpTemplateInput = {
+  actorName?: string;
   customerName?: string;
   dueAt?: Date | string;
   followUpId: IdLike;
+  managerMessage?: string;
 };
 
 function timeLabel(value?: Date | string) {
@@ -32,10 +34,23 @@ export function buildNewMatchNotification(input: MatchTemplateInput) {
 
 export function buildFollowUpCreatedNotification(input: FollowUpTemplateInput) {
   const time = timeLabel(input.dueAt);
+  const managerMessage = input.managerMessage?.trim();
   return {
     actionUrl: `/follow-ups/${String(input.followUpId)}`,
-    message: `پیگیری جدید${time ? ` برای ساعت ${time}` : ""} برای ${input.customerName || "مشتری"} به شما اختصاص داده شد.`,
-    title: "پیگیری جدید برای شما ثبت شد",
+    message: `پیگیری جدید${time ? ` برای ساعت ${time}` : ""} برای ${input.customerName || "مشتری"} به شما اختصاص داده شد.${managerMessage ? ` پیام ${input.actorName || "مدیر"}: ${managerMessage}` : ""}`,
+    title: managerMessage ? "پیگیری جدید همراه با پیام مدیر" : "پیگیری جدید برای شما ثبت شد",
+  };
+}
+
+export function buildFollowUpUpdatedNotification(input: FollowUpTemplateInput) {
+  const managerMessage = input.managerMessage?.trim();
+  const actor = input.actorName || "مدیریت";
+  return {
+    actionUrl: `/follow-ups/${String(input.followUpId)}`,
+    message: managerMessage
+      ? `پیام ${actor} درباره پیگیری ${input.customerName || "مشتری"}: ${managerMessage}`
+      : `پیگیری ${input.customerName || "مشتری"} توسط ${actor} به‌روزرسانی شد.`,
+    title: managerMessage ? "پیام جدید مدیر درباره پیگیری" : "پیگیری به‌روزرسانی شد",
   };
 }
 

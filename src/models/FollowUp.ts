@@ -1,4 +1,4 @@
-import { model, models, Schema, type InferSchemaType } from "mongoose";
+import { deleteModel, model, models, Schema, type InferSchemaType } from "mongoose";
 
 const followUpSchema = new Schema(
   {
@@ -17,6 +17,9 @@ const followUpSchema = new Schema(
     overdueFlaggedAt: { type: Date },
     note: { type: String, trim: true },
     result: { type: String, trim: true },
+    managerMessage: { type: String, trim: true },
+    managerMessageBy: { type: Schema.Types.ObjectId, ref: "User", index: true },
+    managerMessageAt: { type: Date },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", index: true },
     notes: { type: String, trim: true },
     assignedAgent: { type: Schema.Types.ObjectId, ref: "Agent", index: true },
@@ -29,6 +32,10 @@ followUpSchema.index({ status: 1, scheduledAt: 1, agentId: 1 });
 followUpSchema.index({ status: 1, dueAt: 1, agentId: 1 });
 followUpSchema.index({ agentId: 1, completedAt: -1, status: 1 });
 followUpSchema.index({ agentId: 1, scheduledAt: -1, dueAt: -1, status: 1 });
+
+if (models.FollowUp && !models.FollowUp.schema.path("managerMessage")) {
+  deleteModel("FollowUp");
+}
 
 export type FollowUpDocument = InferSchemaType<typeof followUpSchema>;
 export const FollowUp = models.FollowUp || model("FollowUp", followUpSchema);

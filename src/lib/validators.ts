@@ -117,6 +117,7 @@ export const followUpSchema = z.object({
   status: z.enum(["PENDING", "COMPLETED", "CANCELLED"]).default("PENDING"),
   note: z.string().trim().max(1000).optional(),
   result: z.string().trim().max(1000).optional(),
+  managerMessage: z.string().trim().max(2000).optional(),
   customer: z.string().trim().optional(),
   title: z.string().trim().optional(),
   channel: z.enum(["CALL", "WHATSAPP", "EMAIL", "MEETING"]).optional(),

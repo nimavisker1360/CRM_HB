@@ -17,6 +17,7 @@ import {
   buildFollowUpCreatedNotification,
   buildFollowUpDueNotification,
   buildFollowUpOverdueNotification,
+  buildFollowUpUpdatedNotification,
   buildNewMatchNotification,
 } from "@/services/notifications/notification.templates";
 import type {
@@ -292,11 +293,13 @@ export async function createNewMatchNotification(input: {
 }
 
 export async function createFollowUpCreatedNotification(input: {
+  actorName?: string;
   agentId?: IdLike;
   customerId?: IdLike;
   customerName?: string;
   dueAt?: Date | string;
   followUpId: IdLike;
+  managerMessage?: string;
 }) {
   if (!input.agentId) return { created: false, notification: null, reason: "NO_AGENT" as const };
   const template = buildFollowUpCreatedNotification(input);
@@ -311,6 +314,29 @@ export async function createFollowUpCreatedNotification(input: {
     priority: "NORMAL",
     recipientAgentId: input.agentId,
     type: "FOLLOWUP_CREATED",
+  });
+}
+
+export async function createFollowUpUpdatedNotification(input: {
+  actorName?: string;
+  agentId?: IdLike;
+  customerId?: IdLike;
+  customerName?: string;
+  followUpId: IdLike;
+  managerMessage?: string;
+}) {
+  if (!input.agentId) return { created: false, notification: null, reason: "NO_AGENT" as const };
+  const template = buildFollowUpUpdatedNotification(input);
+  return createAgentNotification({
+    ...template,
+    category: "FOLLOWUP",
+    customerId: input.customerId,
+    entityId: input.followUpId,
+    entityType: "FOLLOW_UP",
+    followUpId: input.followUpId,
+    priority: input.managerMessage?.trim() ? "HIGH" : "NORMAL",
+    recipientAgentId: input.agentId,
+    type: "FOLLOWUP_UPDATED",
   });
 }
 

@@ -11,6 +11,7 @@ import { requireSession } from "@/lib/auth/session";
 import { objectIdOrUndefined } from "@/lib/crm-utils";
 import { translateLiteral } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n-server";
+import { formatGregorianDateTime } from "@/lib/format";
 import { connectToDatabase } from "@/lib/mongodb";
 import { serializeMongo } from "@/lib/serialize";
 import { FollowUp } from "@/models";
@@ -52,6 +53,7 @@ export default async function FollowUpDetailPage({ params }: { params: Promise<{
     .populate("agentId", "fullName name email phone")
     .populate("assignedAgent", "fullName name email phone")
     .populate("createdBy", "name email")
+    .populate("managerMessageBy", "name email")
     .lean<DetailRecord | null>();
 
   if (!record) notFound();
@@ -121,6 +123,27 @@ export default async function FollowUpDetailPage({ params }: { params: Promise<{
             ["زمان انجام", followUp.completedAt],
           ]}
         />
+
+        {followUp.managerMessage ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+            <h2 className="font-bold text-amber-950">
+              {locale === "tr" ? "Yöneticinin danışmana mesajı" : "پیام مدیر برای مشاور"}
+            </h2>
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-amber-950" dir="auto">
+              {String(followUp.managerMessage)}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-4 text-xs text-amber-800">
+              {followUp.managerMessageBy ? (
+                <span>
+                  {locale === "tr" ? "Gönderen:" : "ارسال‌کننده:"} {String((followUp.managerMessageBy as DetailRecord).name || (followUp.managerMessageBy as DetailRecord).email || "-")}
+                </span>
+              ) : null}
+              {followUp.managerMessageAt ? (
+                <span>{formatGregorianDateTime(followUp.managerMessageAt, locale)}</span>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         {customer?._id ? (
           <div className="flex flex-wrap gap-2">

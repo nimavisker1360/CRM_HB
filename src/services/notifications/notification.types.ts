@@ -5,6 +5,7 @@ import type { SessionUser } from "@/lib/auth/session";
 export const NOTIFICATION_TYPES = [
   "NEW_MATCH",
   "FOLLOWUP_CREATED",
+  "FOLLOWUP_UPDATED",
   "FOLLOWUP_DUE",
   "FOLLOWUP_OVERDUE",
   "CUSTOMER_ASSIGNED",

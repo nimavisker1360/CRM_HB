@@ -6,6 +6,7 @@ export type CrmRealtimeEventType =
   | "connected"
   | "agent.avatar.updated"
   | "followup.created"
+  | "followup.updated"
   | "notification.created";
 
 export type CrmRealtimeEvent = {
