@@ -25,6 +25,7 @@ export const whatsappConfig = {
   businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID?.trim() || "",
   maxMessagesPerAgentPerDay: intEnv("WHATSAPP_MAX_MESSAGES_PER_AGENT_PER_DAY", 20, 1, 10_000),
   phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() || "",
+  requireLocalInbound: boolEnv(process.env.WHATSAPP_REQUIRE_LOCAL_INBOUND, true),
   templateLanguage: process.env.WHATSAPP_TEMPLATE_LANGUAGE?.trim() || "en_US",
   testAllowedRecipients: allowedRecipients,
   testMode: boolEnv(process.env.WHATSAPP_TEST_MODE, true),

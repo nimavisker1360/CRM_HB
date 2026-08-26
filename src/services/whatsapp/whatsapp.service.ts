@@ -253,10 +253,7 @@ export async function sendWhatsAppMessage(input: SendWhatsAppInput, session: Ses
       direction: "INBOUND",
       lastInboundAt: { $gte: conversationStart },
     });
-    // Meta is the source of truth for the 24-hour conversation window. Webhook
-    // delivery can be delayed or disabled in development mode, so local inbound
-    // history must not incorrectly block a conversation that Meta has opened.
-    if (!hasOpenConversation && process.env.WHATSAPP_REQUIRE_LOCAL_INBOUND === "true") {
+    if (!hasOpenConversation && whatsappConfig.requireLocalInbound) {
       const error = new WhatsAppServiceError(
         related.media.length ? "WHATSAPP_MEDIA_WINDOW_REQUIRED" : "WHATSAPP_CONVERSATION_WINDOW_REQUIRED",
         related.media.length
@@ -328,10 +325,9 @@ export async function sendWhatsAppMessage(input: SendWhatsAppInput, session: Ses
       to: recipientPhone,
       transport: isTemplate ? "TEMPLATE" : "TEXT",
     });
-    const sentAt = new Date();
     const updated = await WhatsAppMessage.findByIdAndUpdate(
       message._id,
-      { $set: { providerMessageId: result.providerMessageId, providerMessageIds: result.providerMessageIds, sentAt, status: "SENT" } },
+      { $set: { providerMessageId: result.providerMessageId, providerMessageIds: result.providerMessageIds, status: result.status } },
       { returnDocument: "after" },
     ).lean<RecordLike | null>();
     await logActivity({
@@ -344,7 +340,7 @@ export async function sendWhatsAppMessage(input: SendWhatsAppInput, session: Ses
         messageId: String(message._id),
         providerMessageId: result.providerMessageId,
         mediaCount: related.media.length,
-        status: "SENT",
+        status: result.status,
       },
       session,
     });

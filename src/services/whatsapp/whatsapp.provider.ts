@@ -111,7 +111,7 @@ export class MetaWhatsAppProvider implements MessagingProvider {
       }));
     }
 
-    return { providerMessageId: providerMessageIds[0], providerMessageIds, status: "SENT" as const };
+    return { providerMessageId: providerMessageIds[0], providerMessageIds, status: "QUEUED" as const };
   }
 }
 

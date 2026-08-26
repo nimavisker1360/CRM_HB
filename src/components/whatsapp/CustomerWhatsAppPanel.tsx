@@ -21,8 +21,9 @@ type Message = {
 const statusStyle: Record<string, string> = {
   DELIVERED: "bg-blue-100 text-blue-700",
   FAILED: "bg-red-100 text-red-700",
+  QUEUED: "bg-amber-100 text-amber-800",
   READ: "bg-violet-100 text-violet-700",
-  SENT: "bg-emerald-100 text-emerald-700",
+  SENT: "bg-sky-100 text-sky-700",
 };
 
 export function CustomerWhatsAppPanel(props: {

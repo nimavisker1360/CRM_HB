@@ -90,6 +90,7 @@ describe("WhatsApp security and normalization", () => {
     });
 
     expect(result.providerMessageIds).toEqual(["wamid.template", "wamid.image", "wamid.video"]);
+    expect(result.status).toBe("QUEUED");
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toMatchObject({
       text: { body: "Property recommendation preview" },

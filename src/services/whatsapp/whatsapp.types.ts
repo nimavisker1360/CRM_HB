@@ -18,7 +18,7 @@ export type ProviderSendInput = {
 export type ProviderSendResult = {
   providerMessageId: string;
   providerMessageIds: string[];
-  status: "SENT";
+  status: "QUEUED";
 };
 
 export interface MessagingProvider {
