@@ -31,6 +31,26 @@ describe("WhatsApp security and normalization", () => {
     expect(publicWhatsAppConfiguration().accessTokenConfigured).toBe(true);
   });
 
+  it("does not report localhost as a configured Meta webhook", async () => {
+    vi.stubEnv("APP_URL", "http://localhost:3000");
+    vi.stubEnv("META_APP_SECRET", "app-secret");
+    vi.stubEnv("WHATSAPP_WEBHOOK_VERIFY_TOKEN", "verify-token");
+    const { isPublicWhatsAppWebhookUrl, publicWhatsAppConfiguration } = await import("@/services/whatsapp/whatsapp.config");
+    expect(isPublicWhatsAppWebhookUrl("http://localhost:3000/api/webhooks/whatsapp")).toBe(false);
+    expect(isPublicWhatsAppWebhookUrl("https://crm.example.com/api/webhooks/whatsapp")).toBe(true);
+    expect(publicWhatsAppConfiguration().webhookConfigured).toBe(false);
+  });
+
+  it("uses the Vercel production domain for the public webhook", async () => {
+    vi.stubEnv("APP_URL", "http://localhost:3000");
+    vi.stubEnv("META_APP_SECRET", "app-secret");
+    vi.stubEnv("VERCEL_PROJECT_PRODUCTION_URL", "crm-production.vercel.app");
+    vi.stubEnv("WHATSAPP_WEBHOOK_VERIFY_TOKEN", "verify-token");
+    const { publicWhatsAppConfiguration, whatsappConfig } = await import("@/services/whatsapp/whatsapp.config");
+    expect(whatsappConfig.webhookPublicUrl).toBe("https://crm-production.vercel.app");
+    expect(publicWhatsAppConfiguration().webhookConfigured).toBe(true);
+  });
+
   it("verifies Meta sha256 signatures", async () => {
     const { createHmac } = await import("node:crypto");
     const { verifySha256Signature } = await import("@/services/whatsapp/whatsapp.signature");

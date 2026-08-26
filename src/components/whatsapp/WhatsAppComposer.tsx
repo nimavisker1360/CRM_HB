@@ -113,12 +113,12 @@ export function WhatsAppComposer({
     internalPreview: "Bu dahili bir önizlemedir; gerçek gönderim yapılandırılmış Meta şablonuyla yapılır.", match: "Eşleşme", matchOffer: "Eşleşme önerisi",
     media: "fotoğraf/video dosyası bu mesajla gönderilecek.", mediaRule: "Medya yalnızca müşteri son 24 saat içinde WhatsApp üzerinden mesaj gönderdiyse gönderilebilir.",
     messageSent: "Mesaj Meta tarafından kabul edildi; teslimat henüz onaylanmadı.", messageType: "Mesaj türü", notConfigured: "Yapılandırılmadı", phone: "Telefon numarası", property: "Gayrimenkul",
-    prepareStartTemplate: "Sohbet başlatma şablonunu gönder",
+    prepareStartTemplate: "Proje olmadan sohbet şablonunu gönder",
     activeProperties: "Tüm aktif gayrimenkuller", catalogError: "Aktif gayrimenkuller yüklenemedi.", catalogLoading: "Aktif gayrimenkuller yükleniyor...",
     noPropertyResult: "Aramanızla eşleşen aktif gayrimenkul bulunamadı.", propertyIntro: "Gayrimenkul tanıtımı", propertySearch: "Kod, başlık, şehir veya bölge ara",
     recipient: "Alıcı", recommendedProperties: "Önerilen gayrimenkuller", sendError: "WhatsApp mesajı gönderilemedi.", sending: "Gönderiliyor...", templateMissing: "Meta test şablonu henüz yapılandırılmadı.",
     templatePreview: (name: string, language: string) => `${name} adlı onaylı Meta şablonu ${language} dilinde gönderilecek.`, templateTest: "Meta test şablonu", text: "Metin",
-    startTemplateSent: "Sohbet şablonu Meta tarafından kabul edildi; teslimattan sonra müşterinin yanıtını bekleyin.", title: "WhatsApp mesajı gönder", whatsapp: "WhatsApp numarası",
+    startTemplateSent: "hello_world şablonu kabul edildi; bu mesaj projeyi içermez. Alıcı yanıt verdikten sonra projeyi yeniden gönderin.", title: "WhatsApp mesajı gönder", whatsapp: "WhatsApp numarası",
   } : {
     close: "بستن", confirm: "تأیید پیام", confirmPrompt: "این پیام به شماره زیر ارسال شود؟", confirmSend: "تأیید و ارسال",
     connectionError: "وضعیت اتصال واتساپ دریافت نشد.", defaultButton: "ارسال پیام واتساپ", duplicate: "این درخواست قبلاً ثبت شده بود و دوباره ارسال نشد.",
@@ -126,19 +126,19 @@ export function WhatsAppComposer({
     internalPreview: "این یک پیش‌نمایش داخلی است؛ ارسال واقعی با قالب تنظیم‌شده Meta انجام می‌شود.", match: "تطبیق", matchOffer: "پیشنهاد تطبیق",
     media: "فایل عکس/ویدیو همراه این پیام ارسال می‌شود.", mediaRule: "ارسال رسانه زمانی مجاز است که مشتری در ۲۴ ساعت اخیر در واتساپ پیام داده باشد.",
     messageSent: "درخواست پیام توسط Meta پذیرفته شد؛ تحویل هنوز تأیید نشده است.", messageType: "نوع پیام", notConfigured: "تنظیم نشده", phone: "شماره تلفن", property: "ملک",
-    prepareStartTemplate: "ارسال قالب شروع گفتگو",
+    prepareStartTemplate: "ارسال قالب گفتگو بدون پروژه",
     activeProperties: "همه املاک فعال", catalogError: "دریافت فهرست املاک فعال ناموفق بود.", catalogLoading: "در حال دریافت املاک فعال...",
     noPropertyResult: "ملک فعالی مطابق جست‌وجوی شما پیدا نشد.", propertyIntro: "معرفی ملک", propertySearch: "جست‌وجوی کد، عنوان، شهر یا منطقه",
     recipient: "گیرنده", recommendedProperties: "املاک پیشنهادی", sendError: "ارسال پیام واتساپ ناموفق بود.", sending: "در حال ارسال...", templateMissing: "قالب آزمایشی Meta هنوز تنظیم نشده است.",
     templatePreview: (name: string, language: string) => `قالب تأییدشده Meta با نام «${name}» و زبان ${language} ارسال می‌شود.`, templateTest: "قالب تست Meta", text: "متن",
-    startTemplateSent: "قالب گفتگو توسط Meta پذیرفته شد؛ پس از تحویل منتظر پاسخ مشتری بمانید.", title: "ارسال پیام واتساپ", whatsapp: "شماره واتساپ",
+    startTemplateSent: "قالب hello_world پذیرفته شد؛ این پیام شامل پروژه نیست. پس از پاسخ مخاطب، پروژه را دوباره ارسال کنید.", title: "ارسال پیام واتساپ", whatsapp: "شماره واتساپ",
   }, [locale]);
   const sessionPreviewNotice = locale === "tr"
     ? "Bu içerik, müşteri yanıt verdikten sonra gerçek metin ve medya olarak gönderilir."
     : "این محتوا پس از پاسخ مشتری به‌صورت متن و رسانه واقعی ارسال می‌شود.";
   const webhookMissing = locale === "tr"
-    ? "Müşteri yanıtlarını almak için WhatsApp webhook ayarları tamamlanmalıdır."
-    : "برای دریافت پاسخ مشتری، ابتدا تنظیمات وب‌هوک واتس‌اپ باید کامل شود.";
+    ? "Müşteri yanıtlarını almak için webhook, localhost yerine herkese açık bir HTTPS adresine bağlanmalıdır."
+    : "برای دریافت پاسخ مخاطب، webhook باید به یک آدرس HTTPS عمومی متصل باشد؛ localhost برای Meta قابل دسترسی نیست.";
   const [open, setOpen] = useState(false);
   const [config, setConfig] = useState<PublicConfig | null>(null);
   const [messageType, setMessageType] = useState(preselectedType);

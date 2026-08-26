@@ -11,6 +11,38 @@ function boolEnv(value: string | undefined, fallback: boolean) {
   return value.trim().toLowerCase() === "true";
 }
 
+export function isPublicWhatsAppWebhookUrl(value: string | undefined) {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    const privateHost = host === "localhost"
+      || host === "0.0.0.0"
+      || host === "::1"
+      || host.startsWith("127.")
+      || host.startsWith("10.")
+      || host.startsWith("192.168.")
+      || /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+      || host.endsWith(".local");
+    return url.protocol === "https:" && !privateHost;
+  } catch {
+    return false;
+  }
+}
+
+function resolveWhatsAppWebhookPublicUrl() {
+  const vercelProductionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  const vercelDeploymentHost = process.env.VERCEL_URL?.trim();
+  const candidates = [
+    process.env.WHATSAPP_WEBHOOK_PUBLIC_URL?.trim(),
+    process.env.APP_URL?.trim(),
+    process.env.NEXTAUTH_URL?.trim(),
+    vercelProductionHost ? `https://${vercelProductionHost}` : "",
+    vercelDeploymentHost ? `https://${vercelDeploymentHost}` : "",
+  ].filter(Boolean) as string[];
+  return candidates.find(isPublicWhatsAppWebhookUrl) || candidates[0] || "";
+}
+
 const allowedRecipients = new Set(
   (process.env.WHATSAPP_TEST_ALLOWED_RECIPIENTS || "")
     .split(",")
@@ -30,6 +62,7 @@ export const whatsappConfig = {
   testAllowedRecipients: allowedRecipients,
   testMode: boolEnv(process.env.WHATSAPP_TEST_MODE, true),
   testTemplateName: process.env.WHATSAPP_TEST_TEMPLATE_NAME?.trim() || "",
+  webhookPublicUrl: resolveWhatsAppWebhookPublicUrl(),
   webhookVerifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN?.trim() || "",
 } as const;
 
@@ -47,6 +80,7 @@ export function getWhatsAppConfigurationIssues() {
 
 export function publicWhatsAppConfiguration() {
   const issues = getWhatsAppConfigurationIssues();
+  const webhookPubliclyReachable = isPublicWhatsAppWebhookUrl(whatsappConfig.webhookPublicUrl);
   return {
     accessTokenConfigured: Boolean(whatsappConfig.accessToken),
     apiVersionConfigured: Boolean(whatsappConfig.apiVersion),
@@ -61,7 +95,8 @@ export function publicWhatsAppConfiguration() {
     testAllowedRecipientCount: whatsappConfig.testAllowedRecipients.size,
     testMode: whatsappConfig.testMode,
     webhookAppSecretConfigured: Boolean(whatsappConfig.appSecret),
-    webhookConfigured: Boolean(whatsappConfig.webhookVerifyToken && whatsappConfig.appSecret),
+    webhookConfigured: Boolean(whatsappConfig.webhookVerifyToken && whatsappConfig.appSecret && webhookPubliclyReachable),
+    webhookPubliclyReachable,
     webhookVerifyTokenConfigured: Boolean(whatsappConfig.webhookVerifyToken),
   };
 }
