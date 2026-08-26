@@ -5,6 +5,7 @@ import { LoaderCircle, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { WhatsAppComposer, type WhatsAppMatchOption, type WhatsAppPropertyOption } from "@/components/whatsapp/WhatsAppComposer";
 import { useLanguage } from "@/components/i18n/LanguageProvider";
+import { formatGregorianDateTime } from "@/lib/format";
 import { translateLiteral } from "@/lib/i18n";
 
 type Message = {
@@ -115,7 +116,7 @@ export function CustomerWhatsAppPanel(props: {
           <tbody>
             {messages.map((message) => (
               <tr className="border-b border-slate-100" key={message._id}>
-                <td className="p-3 text-slate-500">{message.createdAt ? new Date(message.createdAt).toLocaleString(locale === "tr" ? "tr-TR" : "fa-IR") : "-"}</td>
+                <td className="p-3 text-slate-500">{formatGregorianDateTime(message.createdAt, locale)}</td>
                 <td className="p-3">{translateLiteral(message.direction === "INBOUND" ? message.direction : message.messageType || "", locale)}</td>
                 <td className="max-w-sm truncate p-3"><Link className="hover:underline" href={`/whatsapp/${message._id}`}>{message.text || "-"}</Link></td>
                 <td className="p-3">{message.agentId?.fullName || message.agentId?.name || "-"}</td>

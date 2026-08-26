@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatGregorianDate, formatGregorianDateTime } from "@/lib/format";
+import { formatGregorianDate, formatGregorianDateTime, formatGregorianTime } from "@/lib/format";
 
 describe("Gregorian CRM date formatting", () => {
   it("uses the Gregorian year instead of the Persian/Jalali year", () => {
@@ -12,6 +12,10 @@ describe("Gregorian CRM date formatting", () => {
     const formatted = formatGregorianDateTime("2026-08-20T13:30:00.000Z");
     expect(formatted).toContain("2026");
     expect(formatted).toContain("16:30");
+  });
+
+  it("formats time-only values in the Europe/Istanbul time zone", () => {
+    expect(formatGregorianTime("2026-08-20T13:30:00.000Z")).toBe("16:30");
   });
 
   it("uses Turkish date labels when Turkish is selected", () => {
