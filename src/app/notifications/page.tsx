@@ -20,6 +20,7 @@ import {
 import { AccessDenied } from "@/components/layout/AccessDenied";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { NotificationDeleteButton } from "@/components/notifications/NotificationDeleteButton";
 import { Badge } from "@/components/ui/Badge";
 import { firstParam, getAgentScope } from "@/lib/auth/agent-scope";
 import { canManageTeam } from "@/lib/auth/roles";
@@ -255,6 +256,7 @@ function NotificationRow({ agentId, locale, notification, showAgent, t }: {
               {t.archive}
             </button>
           </form>
+          <NotificationDeleteButton agentId={agentId} notificationId={notification._id} />
         </div>
       </div>
     </article>

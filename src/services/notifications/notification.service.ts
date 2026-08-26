@@ -235,6 +235,14 @@ export async function archiveNotification(notificationId: string, input: Notific
   return serializeMongo(notification.toObject());
 }
 
+export async function deleteNotification(notificationId: string, input: NotificationScopeInput) {
+  await connectToDatabase();
+  const notification = await findScopedNotification(notificationId, input);
+  if (!notification) throw new Error("FORBIDDEN");
+  await notification.deleteOne();
+  return { deleted: true };
+}
+
 export async function getNotificationSummary(input: NotificationScopeInput & { filters?: Pick<NotificationFilters, "agentId"> }) {
   await connectToDatabase();
   const baseQuery = notificationScopeQuery(input);

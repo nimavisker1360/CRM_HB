@@ -7,6 +7,7 @@ import type { CrmRealtimeEvent } from "@/services/realtime/realtime-bus";
 const REFRESHABLE_ROUTES = ["/dashboard", "/follow-ups", "/notifications", "/agents"];
 
 export const CRM_REALTIME_EVENT = "crm:realtime";
+export const CRM_NOTIFICATIONS_CHANGED_EVENT = "crm:notifications-changed";
 
 function shouldRefreshPath(pathname: string, event: CrmRealtimeEvent) {
   if (event.type === "connected") return false;

@@ -12,7 +12,7 @@ import {
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useLanguage } from "@/components/i18n/LanguageProvider";
 import { AgentAvatar } from "@/components/crm/AgentAvatar";
-import { CRM_REALTIME_EVENT } from "@/components/layout/RealtimeBridge";
+import { CRM_NOTIFICATIONS_CHANGED_EVENT, CRM_REALTIME_EVENT } from "@/components/layout/RealtimeBridge";
 import type { UserRole } from "@/lib/auth/roles";
 import type { CrmRealtimeEvent } from "@/services/realtime/realtime-bus";
 
@@ -78,11 +78,13 @@ export function Sidebar({ agentAvatar, agentName, role }: { agentAvatar?: string
       if (detail?.type === "notification.created") void loadUnreadCount();
     }
     window.addEventListener(CRM_REALTIME_EVENT, handleRealtime);
+    window.addEventListener(CRM_NOTIFICATIONS_CHANGED_EVENT, loadUnreadCount);
     const interval = window.setInterval(loadUnreadCount, 45_000);
     return () => {
       active = false;
       controller.abort();
       window.removeEventListener(CRM_REALTIME_EVENT, handleRealtime);
+      window.removeEventListener(CRM_NOTIFICATIONS_CHANGED_EVENT, loadUnreadCount);
       window.clearInterval(interval);
     };
   }, [workspaceAgentId]);
